@@ -987,7 +987,9 @@
         async speak(text, btn = null, forceSlowOverride = false) {
           if (!text) return;
           try {
-            if (mode === 'edge') await edgeSpeak(text, btn, forceSlowOverride);
+            // "edge" devredışı, "ws" (Web Speech) kullanarak çalışması için doğrudan wsSpeak'e düşürüyorum
+            // edgeSpeak de duruyor ama çağrılmayacak (veya mode controlünden disable edildi).
+            if (mode === 'edge' && false) await edgeSpeak(text, btn, forceSlowOverride); // Disabled per user request
             else wsSpeak(text, btn, forceSlowOverride);
           } catch (e) {
             console.warn('Edge TTS err:', e.message, '→ fallback');
@@ -1021,24 +1023,116 @@
     };
 
     // ══════════════════════════════════════════════════════════════
-    //  DATA (CEDICT + Özel Türkçe Karşılıklar)
+    //  DATA (Kullanıcı İlişkisel Sözlüğü)
     // ══════════════════════════════════════════════════════════════
-    const TR_DICT = {
-      '好': 'iyi', '我': 'ben', '是': 'olmak (-dır)', '不': 'değil / hayır', '人': 'insan', '学': 'öğrenmek', '生': 'hayat / doğmak', '日': 'gün',
-      '大': 'büyük', '小': 'küçük', '中': 'orta / Çin', '国': 'ülke', '上': 'yukarı', '下': 'aşağı', '来': 'gelmek', '去': 'gitmek', '有': 'sahip olmak / var',
-      '没': 'yok / -medi', '说': 'konuşmak', '看': 'bakmak', '吃': 'yemek', '喝': 'içmek', '要': 'istemek', '在': '...da/de / olmak', '这': 'bu', '那': 'o / şu',
-      '他': 'o (erkek)', '她': 'o (dişi)', '我们': 'biz', '你们': 'siz', '的': "yapı eki '-in'", '了': 'geçmiş zaman eki', '吗': 'soru eki (mı/mi)',
-      '很': 'çok / gayet', '都': 'hepsi / hep', '也': 'de / da', '和': 've / ile', '老师': 'öğretmen', '学生': 'öğrenci', '学习': 'çalışmak / öğrenmek',
-      '学校': 'okul', '大学': 'üniversite', '医生': 'doktor', '医院': 'hastane', '家': 'ev / aile', '里': 'içinde', '多': 'çok', '少': 'az', '今天': 'bugün',
-      '天气': 'hava durumu', '时间': 'zaman', '问题': 'sorun / soru', '工作': 'iş / çalışmak', '知道': 'bilmek', '想': 'düşünmek / istemek', '电话': 'telefon',
-      '电视': 'televizyon', '电脑': 'bilgisayar', '电影': 'film', '书': 'kitap', '水': 'su', '饭': 'pilav / yemek', '钱': 'para', '再见': 'görüşürüz',
-      '谢谢': 'teşekkür ederim', '对不起': 'özür dilerim', '没关系': 'sorun değil', '朋友': 'arkadaş', '爸爸': 'baba', '妈妈': 'anne', '哥哥': 'ağabey',
-      '弟弟': 'erkek kardeş', '姐姐': 'abla', '妹妹': 'kız kardeş', '飞机': 'uçak', '火车': 'tren', '出租车': 'taksi', '帮助': 'yardım etmek',
-      '地方': 'yer / mekân', '发现': 'keşfetmek', '感觉': 'his / hissetmek', '故事': 'hikâye', '关系': 'ilişki', '结果': 'sonuç', '历史': 'tarih',
-      '明白': 'anlamak', '世界': 'dünya', '突然': 'aniden', '文化': 'kültür', '认为': 'düşünmek / inanmak', '声音': 'ses'
-    };
-    let WORDS = [];
-    const SENTENCES = [];
+    const WORDS = [
+      { hanzi: '好', pinyin: 'hǎo', en: 'good', tr: 'iyi', hsk: 1, compounds: ['你好', '好的', '好吃'] },
+      { hanzi: '我', pinyin: 'wǒ', en: 'I / me', tr: 'ben', hsk: 1, compounds: ['我们', '我的'] },
+      { hanzi: '是', pinyin: 'shì', en: 'to be', tr: 'olmak (-dır)', hsk: 1, compounds: ['就是', '不是', '是的'] },
+      { hanzi: '不', pinyin: 'bù', en: 'not', tr: 'değil / hayır', hsk: 1, compounds: ['不是', '不好', '不对'] },
+      { hanzi: '人', pinyin: 'rén', en: 'person', tr: 'insan', hsk: 1, compounds: ['人们', '中国人', '工人'] },
+      { hanzi: '学', pinyin: 'xué', en: 'to study', tr: 'öğrenmek', hsk: 1, compounds: ['学生', '学习', '学校', '大学', '同学'] },
+      { hanzi: '生', pinyin: 'shēng', en: 'life / born', tr: 'hayat / doğmak', hsk: 1, compounds: ['学生', '医生', '先生', '生日'] },
+      { hanzi: '日', pinyin: 'rì', en: 'sun / day', tr: 'gün', hsk: 1, compounds: ['生日', '日本', '星期日'] },
+      { hanzi: '大', pinyin: 'dà', en: 'big', tr: 'büyük', hsk: 1, compounds: ['大学', '大家', '大人'] },
+      { hanzi: '小', pinyin: 'xiǎo', en: 'small', tr: 'küçük', hsk: 1, compounds: ['小学', '小时', '小姐'] },
+      { hanzi: '中', pinyin: 'zhōng', en: 'middle / China', tr: 'orta / Çin', hsk: 1, compounds: ['中国', '中文', '中午', '中学'] },
+      { hanzi: '国', pinyin: 'guó', en: 'country', tr: 'ülke', hsk: 1, compounds: ['中国', '国家', '美国', '外国'] },
+      { hanzi: '上', pinyin: 'shàng', en: 'up / above', tr: 'yukarı', hsk: 1, compounds: ['上面', '上学', '上午'] },
+      { hanzi: '下', pinyin: 'xià', en: 'down / below', tr: 'aşağı', hsk: 1, compounds: ['下面', '下午', '下来'] },
+      { hanzi: '来', pinyin: 'lái', en: 'to come', tr: 'gelmek', hsk: 1, compounds: ['来到', '回来', '进来', '出来'] },
+      { hanzi: '去', pinyin: 'qù', en: 'to go', tr: 'gitmek', hsk: 1, compounds: ['去年', '过去', '出去', '回去'] },
+      { hanzi: '有', pinyin: 'yǒu', en: 'to have', tr: 'sahip olmak / var', hsk: 1, compounds: ['没有', '有意思', '有名'] },
+      { hanzi: '没', pinyin: 'méi', en: 'not / without', tr: 'yok / -medi', hsk: 1, compounds: ['没有', '没关系', '没问题'] },
+      { hanzi: '说', pinyin: 'shuō', en: 'to speak', tr: 'konuşmak', hsk: 1, compounds: ['说话', '说明', '听说'] },
+      { hanzi: '看', pinyin: 'kàn', en: 'to look', tr: 'bakmak', hsk: 1, compounds: ['看见', '看书', '好看'] },
+      { hanzi: '吃', pinyin: 'chī', en: 'to eat', tr: 'yemek', hsk: 1, compounds: ['吃饭', '好吃'] },
+      { hanzi: '喝', pinyin: 'hē', en: 'to drink', tr: 'içmek', hsk: 1, compounds: ['喝水', '喝茶', '喝酒'] },
+      { hanzi: '要', pinyin: 'yào', en: 'to want', tr: 'istemek', hsk: 1, compounds: ['要是', '需要', '不要'] },
+      { hanzi: '在', pinyin: 'zài', en: 'at / exist', tr: '...da/de / olmak', hsk: 1, compounds: ['现在', '在家', '不在'] },
+      { hanzi: '这', pinyin: 'zhè', en: 'this', tr: 'bu', hsk: 1, compounds: ['这里', '这个', '这样', '这么'] },
+      { hanzi: '那', pinyin: 'nà', en: 'that', tr: 'o / şu', hsk: 1, compounds: ['那里', '那个', '那么'] },
+      { hanzi: '他', pinyin: 'tā', en: 'he', tr: 'o (erkek)', hsk: 1, compounds: ['他们', '他的'] },
+      { hanzi: '她', pinyin: 'tā', en: 'she', tr: 'o (dişi)', hsk: 1, compounds: ['她们', '她的'] },
+      { hanzi: '我们', pinyin: 'wǒmen', en: 'we', tr: 'biz', hsk: 1, compounds: [] },
+      { hanzi: '你们', pinyin: 'nǐmen', en: 'you (plural)', tr: 'siz', hsk: 1, compounds: [] },
+      { hanzi: '的', pinyin: 'de', en: 'structural particle', tr: "yapı eki '-in'", hsk: 1, compounds: [] },
+      { hanzi: '了', pinyin: 'le', en: 'completed action particle', tr: 'geçmiş zaman eki', hsk: 1, compounds: [] },
+      { hanzi: '吗', pinyin: 'ma', en: 'question particle', tr: 'soru eki (mı/mi)', hsk: 1, compounds: [] },
+      { hanzi: '很', pinyin: 'hěn', en: 'very', tr: 'çok / gayet', hsk: 1, compounds: ['很好', '很大', '很多'] },
+      { hanzi: '都', pinyin: 'dōu', en: 'all', tr: 'hepsi / hep', hsk: 1, compounds: ['都是', '都好'] },
+      { hanzi: '也', pinyin: 'yě', en: 'also', tr: 'de / da', hsk: 1, compounds: ['也是', '也好'] },
+      { hanzi: '和', pinyin: 'hé', en: 'and / with', tr: 've / ile', hsk: 1, compounds: ['和平'] },
+      { hanzi: '老师', pinyin: 'lǎoshī', en: 'teacher', tr: 'öğretmen', hsk: 1, compounds: [] },
+      { hanzi: '学生', pinyin: 'xuésheng', en: 'student', tr: 'öğrenci', hsk: 1, compounds: [] },
+      { hanzi: '学习', pinyin: 'xuéxí', en: 'to study', tr: 'çalışmak / öğrenmek', hsk: 1, compounds: [] },
+      { hanzi: '学校', pinyin: 'xuéxiào', en: 'school', tr: 'okul', hsk: 1, compounds: [] },
+      { hanzi: '大学', pinyin: 'dàxué', en: 'university', tr: 'üniversite', hsk: 2, compounds: [] },
+      { hanzi: '医生', pinyin: 'yīshēng', en: 'doctor', tr: 'doktor', hsk: 1, compounds: [] },
+      { hanzi: '医院', pinyin: 'yīyuàn', en: 'hospital', hsk: 2, compounds: [] },
+      { hanzi: '家', pinyin: 'jiā', en: 'home', tr: 'ev / aile', hsk: 1, compounds: ['大家', '家人', '回家'] },
+      { hanzi: '里', pinyin: 'lǐ', en: 'inside', tr: 'içinde', hsk: 1, compounds: ['这里', '那里', '家里'] },
+      { hanzi: '多', pinyin: 'duō', en: 'many', tr: 'çok', hsk: 1, compounds: ['很多', '多少'] },
+      { hanzi: '少', pinyin: 'shǎo', en: 'few', tr: 'az', hsk: 1, compounds: ['多少'] },
+      { hanzi: '今天', pinyin: 'jīntiān', en: 'today', tr: 'bugün', hsk: 1, compounds: [] },
+      { hanzi: '天气', pinyin: 'tiānqì', en: 'weather', tr: 'hava durumu', hsk: 1, compounds: [] },
+      { hanzi: '时间', pinyin: 'shíjiān', en: 'time', tr: 'zaman', hsk: 2, compounds: [] },
+      { hanzi: '问题', pinyin: 'wèntí', en: 'problem / question', tr: 'sorun / soru', hsk: 2, compounds: [] },
+      { hanzi: '工作', pinyin: 'gōngzuò', en: 'work', tr: 'iş / çalışmak', hsk: 2, compounds: [] },
+      { hanzi: '知道', pinyin: 'zhīdào', en: 'to know', tr: 'bilmek', hsk: 2, compounds: [] },
+      { hanzi: '想', pinyin: 'xiǎng', en: 'to think / want', tr: 'düşünmek / istemek', hsk: 1, compounds: [] },
+      { hanzi: '电话', pinyin: 'diànhuà', en: 'telephone', tr: 'telefon', hsk: 1, compounds: [] },
+      { hanzi: '电视', pinyin: 'diànshì', en: 'television', tr: 'televizyon', hsk: 2, compounds: [] },
+      { hanzi: '电脑', pinyin: 'diànnǎo', en: 'computer', tr: 'bilgisayar', hsk: 2, compounds: [] },
+      { hanzi: '电影', pinyin: 'diànyǐng', en: 'movie', tr: 'film', hsk: 2, compounds: [] },
+      { hanzi: '书', pinyin: 'shū', en: 'book', tr: 'kitap', hsk: 1, compounds: ['读书'] },
+      { hanzi: '水', pinyin: 'shuǐ', en: 'water', tr: 'su', hsk: 1, compounds: ['喝水', '水果'] },
+      { hanzi: '饭', pinyin: 'fàn', en: 'rice / meal', tr: 'pilav / yemek', hsk: 1, compounds: ['吃饭', '米饭'] },
+      { hanzi: '钱', pinyin: 'qián', en: 'money', tr: 'para', hsk: 1, compounds: ['有钱', '没钱'] },
+      { hanzi: '再见', pinyin: 'zàijiàn', en: 'goodbye', tr: 'görüşürüz', hsk: 1, compounds: [] },
+      { hanzi: '谢谢', pinyin: 'xièxie', en: 'thank you', tr: 'teşekkür ederim', hsk: 1, compounds: [] },
+      { hanzi: '对不起', pinyin: 'duìbuqǐ', en: 'sorry', tr: 'özür dilerim', hsk: 1, compounds: [] },
+      { hanzi: '没关系', pinyin: 'méiguānxi', en: "it's OK", tr: 'sorun değil', hsk: 1, compounds: [] },
+      { hanzi: '朋友', pinyin: 'péngyou', en: 'friend', tr: 'arkadaş', hsk: 1, compounds: [] },
+      { hanzi: '爸爸', pinyin: 'bàba', en: 'dad', tr: 'baba', hsk: 1, compounds: [] },
+      { hanzi: '妈妈', pinyin: 'māma', en: 'mom', tr: 'anne', hsk: 1, compounds: [] },
+      { hanzi: '哥哥', pinyin: 'gēge', en: 'older brother', tr: 'ağabey', hsk: 1, compounds: [] },
+      { hanzi: '弟弟', pinyin: 'dìdi', en: 'younger brother', tr: 'erkek kardeş', hsk: 1, compounds: [] },
+      { hanzi: '姐姐', pinyin: 'jiějie', en: 'older sister', tr: 'abla', hsk: 1, compounds: [] },
+      { hanzi: '妹妹', pinyin: 'mèimei', en: 'younger sister', tr: 'kız kardeş', hsk: 1, compounds: [] },
+      { hanzi: '飞机', pinyin: 'fēijī', en: 'airplane', tr: 'uçak', hsk: 2, compounds: [] },
+      { hanzi: '火车', pinyin: 'huǒchē', en: 'train', tr: 'tren', hsk: 2, compounds: [] },
+      { hanzi: '出租车', pinyin: 'chūzūchē', en: 'taxi', tr: 'taksi', hsk: 2, compounds: [] },
+      { hanzi: '帮助', pinyin: 'bāngzhù', en: 'to help', tr: 'yardım etmek', hsk: 3, compounds: [] },
+      { hanzi: '地方', pinyin: 'dìfang', en: 'place', tr: 'yer / mekân', hsk: 3, compounds: [] },
+      { hanzi: '发现', pinyin: 'fāxiàn', en: 'to discover', tr: 'keşfetmek', hsk: 3, compounds: [] },
+      { hanzi: '感觉', pinyin: 'gǎnjué', en: 'feeling', tr: 'his / hissetmek', hsk: 3, compounds: [] },
+      { hanzi: '故事', pinyin: 'gùshi', en: 'story', tr: 'hikâye', hsk: 3, compounds: [] },
+      { hanzi: '关系', pinyin: 'guānxi', en: 'relationship', tr: 'ilişki', hsk: 3, compounds: [] },
+      { hanzi: '结果', pinyin: 'jiéguǒ', en: 'result', tr: 'sonuç', hsk: 3, compounds: [] },
+      { hanzi: '历史', pinyin: 'lìshǐ', en: 'history', tr: 'tarih', hsk: 3, compounds: [] },
+      { hanzi: '明白', pinyin: 'míngbai', en: 'to understand', tr: 'anlamak', hsk: 3, compounds: [] },
+      { hanzi: '世界', pinyin: 'shìjiè', en: 'world', tr: 'dünya', hsk: 3, compounds: [] },
+      { hanzi: '突然', pinyin: 'tūrán', en: 'suddenly', tr: 'aniden', hsk: 3, compounds: [] },
+      { hanzi: '文化', pinyin: 'wénhuà', en: 'culture', tr: 'kültür', hsk: 3, compounds: [] },
+      { hanzi: '认为', pinyin: 'rènwéi', en: 'to think', tr: 'düşünmek / inanmak', hsk: 3, compounds: [] },
+      { hanzi: '声音', pinyin: 'shēngyīn', en: 'sound / voice', tr: 'ses', hsk: 3, compounds: [] },
+    ];
+
+    const SENTENCES = [
+      { cn: '我是学生。', py: 'Wǒ shì xuésheng.', tr: 'Ben öğrenciyim.', blocks: ['我', '是', '学生'] },
+      { cn: '你好！', py: 'Nǐ hǎo!', tr: 'Merhaba!', blocks: ['你', '好'] },
+      { cn: '他是老师。', py: 'Tā shì lǎoshī.', tr: 'O öğretmen.', blocks: ['他', '是', '老师'] },
+      { cn: '我没有钱。', py: 'Wǒ méiyǒu qián.', tr: 'Param yok.', blocks: ['我', '没有', '钱'] },
+      { cn: '你吃饭了吗？', py: 'Nǐ chīfàn le ma?', tr: 'Yemek yedin mi?', blocks: ['你', '吃饭', '了', '吗'] },
+      { cn: '今天天气很好。', py: 'Jīntiān tiānqì hěn hǎo.', tr: 'Bugün hava çok güzel.', blocks: ['今天', '天气', '很', '好'] },
+      { cn: '我想学中文。', py: 'Wǒ xiǎng xué zhōngwén.', tr: 'Çince öğrenmek istiyorum.', blocks: ['我', '想', '学', '中文'] },
+      { cn: '谢谢你。', py: 'Xièxie nǐ.', tr: 'Teşekkür ederim.', blocks: ['谢谢', '你'] },
+      { cn: '对不起！', py: 'Duìbuqǐ!', tr: 'Özür dilerim!', blocks: ['对不起'] },
+      { cn: '我在学习。', py: 'Wǒ zài xuéxí.', tr: 'Çalışıyorum.', blocks: ['我', '在', '学习'] },
+      { cn: '你知道吗？', py: 'Nǐ zhīdào ma?', tr: 'Biliyor musun?', blocks: ['你', '知道', '吗'] },
+      { cn: '再见！', py: 'Zàijiàn!', tr: 'Görüşürüz!', blocks: ['再见'] },
+    ];
 
     // ══════════════════════════════════════════════════════════════
     //  FILTER
@@ -1426,24 +1520,6 @@
     document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => { S.tab = b.dataset.tab; render(); }));
     window.addEventListener('load', async () => {
       if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
-
-      // Yüklenirken Loading göstergesi
-      const main = document.getElementById('main');
-      if (main) main.innerHTML = '<div style="text-align:center;padding:4rem;color:var(--text2)">Veritabanı yükleniyor (~12MB)...<br><span style="font-size:0.7rem;opacity:0.6">(Sadece ilk girişte yüklenir, sonra tarayıcı belleğindedir)</span></div>';
-
-      try {
-        const res = await fetch('data/dict.json', { cache: 'force-cache' });
-        if (res.ok) {
-          WORDS = await res.json();
-          // Türkçe kelime eklemeleri ve indexleme iyileştirmelerini yapalım
-          WORDS.forEach(w => {
-            if (TR_DICT[w.hanzi]) w.tr = TR_DICT[w.hanzi];
-          });
-        }
-      } catch (e) {
-        console.error("Sözlük yüklenemedi", e);
-      }
-
       filterWords();
       await TTS.init();
       render();
