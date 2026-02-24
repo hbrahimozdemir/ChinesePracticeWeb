@@ -1,396 +1,1267 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Çince Çalışma Sistemi</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React ve ReactDOM -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "lucide-react": "https://esm.sh/lucide-react@0.263.1"
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>汉语学习 · Çince Öğren</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700&family=Noto+Serif+SC:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- D3 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --surface: #18181c;
+      --surface2: #222228;
+      --border: #2e2e38;
+      --accent: #e8b84b;
+      --accent2: #c05c3a;
+      --text: #f0ede6;
+      --text2: #9a9890;
+      --red: #d94f3d;
+      --green: #4caf7d;
+      --blue: #5b9bd5;
     }
-    </script>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+    }
+    .hanzi { font-family: 'Noto Serif SC', serif; }
+    .hanzi-lg { font-family: 'Noto Serif SC', serif; font-size: 7rem; line-height: 1; }
 
-    <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    /* ── Layout ── */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
 
-    <!-- Özel Fontlar -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
-        
-        .font-serif { font-family: 'Noto Serif SC', serif; }
-        .font-kaiti { font-family: "KaiTi", "STKaiti", "BiauKai", "Times New Roman", serif; }
-        .style-preserve-3d { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
-        
-        /* Animasyonlar */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-    </style>
+    header {
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      background: var(--surface);
+    }
+    .logo { font-size: 1.5rem; font-family: 'Noto Serif SC', serif; color: var(--accent); letter-spacing: 2px; }
+    .logo span { color: var(--text2); font-size: 0.8rem; font-family: 'Space Mono', monospace; display: block; letter-spacing: 4px; }
+
+    nav { display: flex; gap: 0.25rem; margin-left: auto; flex-wrap: wrap; }
+    nav button {
+      padding: 0.45rem 1rem;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text2);
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      border-radius: 4px;
+    }
+    nav button:hover { color: var(--text); border-color: var(--border); }
+    nav button.active { color: var(--accent); border-color: var(--accent); background: rgba(232,184,75,0.07); }
+
+    main { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 0.5rem 1.2rem;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      transition: all 0.15s;
+      letter-spacing: 1px;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+    .btn-accent:hover { opacity: 0.85; color: #000; }
+    .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.65rem; }
+
+    /* ── Search ── */
+    .search-wrap { position: relative; }
+    .search-wrap input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.8rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap .icon { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); color: var(--text2); font-size: 1rem; }
+
+    /* ── HSK Level Pills ── */
+    .level-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .pill {
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      font-size: 0.65rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: transparent;
+      color: var(--text2);
+      font-family: 'Space Mono', monospace;
+    }
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+    /* ── Word List ── */
+    .word-list { overflow-y: auto; max-height: 500px; }
+    .word-list::-webkit-scrollbar { width: 4px; }
+    .word-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .word-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: 1px solid transparent;
+    }
+    .word-row:hover { background: var(--surface2); }
+    .word-row.selected { background: rgba(232,184,75,0.08); border-color: var(--accent); }
+    .word-row .hw { font-family: 'Noto Serif SC', serif; font-size: 1.4rem; color: var(--text); min-width: 2.5rem; }
+    .word-row .py { font-size: 0.7rem; color: var(--accent); flex: 1; }
+    .word-row .mn { font-size: 0.65rem; color: var(--text2); max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lv-badge { font-size: 0.55rem; padding: 0.1rem 0.35rem; border-radius: 3px; background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+    /* ── Detail Panel ── */
+    .detail-panel { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+    .char-box {
+      width: 180px; height: 180px;
+      border: 2px solid var(--accent);
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface2);
+    }
+    .char-box::before { content: ''; position: absolute; width: 100%; height: 1px; background: var(--border); }
+    .char-box::after { content: ''; position: absolute; height: 100%; width: 1px; background: var(--border); }
+    .char-box .hanzi-lg { position: relative; z-index: 1; color: var(--text); }
+
+    .pinyin-big { font-size: 1.8rem; color: var(--accent); letter-spacing: 2px; font-family: 'Space Mono', monospace; }
+    .meaning-txt { font-size: 0.9rem; color: var(--text2); text-align: center; line-height: 1.7; }
+
+    /* ── Example Sentences ── */
+    .sentence-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      width: 100%;
+    }
+    .sentence-cn { font-family: 'Noto Serif SC', serif; font-size: 1.2rem; color: var(--text); margin-bottom: 0.3rem; }
+    .sentence-py { font-size: 0.72rem; color: var(--accent); margin-bottom: 0.3rem; }
+    .sentence-tr { font-size: 0.78rem; color: var(--text2); }
+
+    /* ── D3 Graf ── */
+    #graph-container {
+      width: 100%; height: 520px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    #graph-container svg { width: 100%; height: 100%; }
+    .graph-empty {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      text-align: center; color: var(--text2);
+    }
+    .graph-empty .big { font-family: 'Noto Serif SC', serif; font-size: 4rem; opacity: 0.1; }
+    .graph-empty p { font-size: 0.8rem; margin-top: 0.5rem; }
+
+    .node-label-zh { font-family: 'Noto Serif SC', serif; }
+
+    /* ── Flashcard ── */
+    .flashcard-scene { perspective: 1000px; width: 300px; height: 360px; cursor: pointer; }
+    .flashcard-inner {
+      width: 100%; height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(.4,0,.2,1);
+    }
+    .flashcard-inner.flipped { transform: rotateY(180deg); }
+    .flashcard-face {
+      position: absolute; width: 100%; height: 100%;
+      backface-visibility: hidden;
+      border-radius: 16px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1rem; padding: 2rem;
+    }
+    .card-front { background: var(--surface); border: 1px solid var(--border); }
+    .card-back { background: var(--surface2); border: 1px solid var(--accent); transform: rotateY(180deg); }
+
+    /* ── Quiz ── */
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .quiz-opt {
+      padding: 1.2rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+      cursor: pointer;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 2rem;
+      text-align: center;
+      transition: all 0.15s;
+      color: var(--text);
+    }
+    .quiz-opt:hover:not(:disabled) { border-color: var(--accent); background: rgba(232,184,75,0.07); }
+    .quiz-opt.correct { border-color: var(--green); background: rgba(76,175,125,0.12); color: var(--green); }
+    .quiz-opt.wrong { border-color: var(--red); background: rgba(217,79,61,0.12); color: var(--red); }
+    .quiz-opt:disabled { cursor: default; }
+
+    /* ── Score bar ── */
+    .score-bar { display: flex; gap: 0.25rem; }
+    .score-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+    .score-dot.hit { background: var(--green); }
+    .score-dot.miss { background: var(--red); }
+
+    /* ── Sentence Builder ── */
+    .blocks-area {
+      min-height: 70px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem;
+      align-items: center; justify-content: center;
+      transition: border-color 0.2s;
+    }
+    .blocks-area.correct { border-color: var(--green); background: rgba(76,175,125,0.05); }
+    .blocks-area.wrong { border-color: var(--red); background: rgba(217,79,61,0.05); }
+    .block-btn {
+      padding: 0.5rem 0.9rem;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.3rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .block-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .block-btn.placed { background: rgba(232,184,75,0.1); border-color: var(--accent); color: var(--accent); }
+
+    /* ── Volume btn ── */
+    .vol-btn {
+      background: rgba(232,184,75,0.1);
+      border: 1px solid rgba(232,184,75,0.3);
+      color: var(--accent);
+      border-radius: 50%;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.15s;
+    }
+    .vol-btn:hover { background: rgba(232,184,75,0.2); }
+
+    /* ── Grid helpers ── */
+    .grid-2 { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: 280px 1fr 320px; gap: 1.5rem; }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 0.4rem; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .tag { font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 3px; border: 1px solid var(--border); color: var(--text2); }
+    .tag-accent { border-color: rgba(232,184,75,0.4); color: var(--accent); }
+
+    .muted { color: var(--text2); font-size: 0.75rem; }
+    hr-line { display: block; height: 1px; background: var(--border); margin: 1rem 0; border: none; }
+
+    input[type=range] { accent-color: var(--accent); }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      pointer-events: none;
+      font-size: 0.75rem;
+      z-index: 999;
+      display: none;
+      max-width: 200px;
+    }
+    #tooltip .t-hz { font-family: 'Noto Serif SC', serif; font-size: 1.5rem; color: var(--text); }
+    #tooltip .t-py { color: var(--accent); }
+    #tooltip .t-mn { color: var(--text2); margin-top: 0.2rem; font-size: 0.68rem; }
+
+    .loading-spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .fade-in { animation: fadeUp 0.3s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  </style>
 </head>
-<body class="bg-gray-100">
-    <div id="root"></div>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      汉语学习
+      <span>ÇİNCE ÖĞREN</span>
+    </div>
+    <nav id="nav">
+      <button class="active" data-tab="dictionary">📖 Sözlük + Graf</button>
+      <button data-tab="flashcards">🃏 Flashcard</button>
+      <button data-tab="sentences">🧩 Cümle</button>
+      <button data-tab="quiz">❓ Quiz</button>
+    </nav>
+  </header>
+  <main id="main"></main>
+</div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { BookOpen, Layers, CheckCircle, Volume2, HelpCircle, PenTool, Search, ExternalLink, Upload, Database } from 'lucide-react';
+<div id="tooltip">
+  <div class="t-hz" id="tt-hz"></div>
+  <div class="t-py" id="tt-py"></div>
+  <div class="t-mn" id="tt-mn"></div>
+</div>
 
-        const ChineseStudySystem = () => {
-            const [activeTab, setActiveTab] = useState('flashcards');
+<script>
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+let state = {
+  tab: 'dictionary',
+  hskLevel: 'all',
+  allWords: [],         // full HSK dataset
+  words: [],            // filtered by level
+  selected: null,       // currently selected word
+  graphSearch: '',
+  graphData: null,
+  flashIdx: 0,
+  flashFlipped: false,
+  quizIdx: 0,
+  quizAnswered: false,
+  quizSelected: null,
+  quizScore: [],
+  quizOptions: [],
+  sentIdx: 0,
+  sentUserBlocks: [],
+  sentAvail: [],
+  sentStatus: 'idle',
+  loading: true,
+  loadError: null,
+};
 
-            // --- SESLENDİRME ---
-            const speak = (text) => {
-                if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'zh-CN';
-                    utterance.rate = 0.8;
-                    window.speechSynthesis.speak(utterance);
-                }
-            };
+// ════════════════════════════════════════════════
+//  EMBEDDED STARTER DATA (HSK 1-2 essentials)
+//  Will be supplemented / replaced by GitHub fetch
+// ════════════════════════════════════════════════
+const STARTER_WORDS = [
+  {hanzi:'你',pinyin:'nǐ',en:'you',tr:'sen',hsk:1,compounds:['你好','你们']},
+  {hanzi:'好',pinyin:'hǎo',en:'good',tr:'iyi',hsk:1,compounds:['你好','好的','好吃']},
+  {hanzi:'我',pinyin:'wǒ',en:'I / me',tr:'ben',hsk:1,compounds:['我们','我的']},
+  {hanzi:'是',pinyin:'shì',en:'to be',tr:'olmak (-dır)',hsk:1,compounds:['就是','不是','是的']},
+  {hanzi:'不',pinyin:'bù',en:'not / no',tr:'değil / hayır',hsk:1,compounds:['不是','不好','不对']},
+  {hanzi:'人',pinyin:'rén',en:'person',tr:'insan, kişi',hsk:1,compounds:['人们','中国人','工人']},
+  {hanzi:'学',pinyin:'xué',en:'to study / learn',tr:'öğrenmek',hsk:1,compounds:['学生','学习','学校','大学','同学']},
+  {hanzi:'生',pinyin:'shēng',en:'life / born',tr:'yaşam, doğmak',hsk:1,compounds:['学生','医生','先生','生日']},
+  {hanzi:'日',pinyin:'rì',en:'sun / day',tr:'gün, güneş',hsk:1,compounds:['生日','日本','星期日','日子']},
+  {hanzi:'大',pinyin:'dà',en:'big',tr:'büyük',hsk:1,compounds:['大学','大家','大人','大好']},
+  {hanzi:'小',pinyin:'xiǎo',en:'small',tr:'küçük',hsk:1,compounds:['小学','小时','小姐','小心']},
+  {hanzi:'中',pinyin:'zhōng',en:'middle / China',tr:'orta, Çin',hsk:1,compounds:['中国','中文','中午','中学']},
+  {hanzi:'国',pinyin:'guó',en:'country',tr:'ülke',hsk:1,compounds:['中国','国家','美国','外国']},
+  {hanzi:'上',pinyin:'shàng',en:'up / above',tr:'yukarı, üzeri',hsk:1,compounds:['上面','上学','上午','以上']},
+  {hanzi:'下',pinyin:'xià',en:'down / below',tr:'aşağı, altı',hsk:1,compounds:['下面','下午','下来','以下']},
+  {hanzi:'来',pinyin:'lái',en:'to come',tr:'gelmek',hsk:1,compounds:['来到','回来','进来','出来']},
+  {hanzi:'去',pinyin:'qù',en:'to go',tr:'gitmek',hsk:1,compounds:['去年','过去','出去','回去']},
+  {hanzi:'有',pinyin:'yǒu',en:'to have',tr:'sahip olmak, var',hsk:1,compounds:['没有','有意思','有名','有点']},
+  {hanzi:'没',pinyin:'méi',en:'not / without',tr:'yok, -medi',hsk:1,compounds:['没有','没关系','没问题']},
+  {hanzi:'说',pinyin:'shuō',en:'to speak',tr:'konuşmak, söylemek',hsk:1,compounds:['说话','说明','听说','说法']},
+  {hanzi:'看',pinyin:'kàn',en:'to look / watch',tr:'bakmak, izlemek',hsk:1,compounds:['看见','看书','看看','好看']},
+  {hanzi:'吃',pinyin:'chī',en:'to eat',tr:'yemek (yemek)',hsk:1,compounds:['吃饭','好吃','吃东西']},
+  {hanzi:'喝',pinyin:'hē',en:'to drink',tr:'içmek',hsk:1,compounds:['喝水','喝茶','喝酒']},
+  {hanzi:'要',pinyin:'yào',en:'to want / will',tr:'istemek, -ecek',hsk:1,compounds:['要是','需要','不要','主要']},
+  {hanzi:'在',pinyin:'zài',en:'at / in / exist',tr:'...da/de, olmak',hsk:1,compounds:['现在','在家','在乎','不在']},
+  {hanzi:'这',pinyin:'zhè',en:'this',tr:'bu',hsk:1,compounds:['这里','这个','这样','这么']},
+  {hanzi:'那',pinyin:'nà',en:'that',tr:'şu, o',hsk:1,compounds:['那里','那个','那么','那样']},
+  {hanzi:'他',pinyin:'tā',en:'he / him',tr:'o (erkek)',hsk:1,compounds:['他们','他的']},
+  {hanzi:'她',pinyin:'tā',en:'she / her',tr:'o (dişi)',hsk:1,compounds:['她们','她的']},
+  {hanzi:'们',pinyin:'men',en:'plural suffix',tr:'çoğul eki',hsk:1,compounds:['我们','你们','他们','她们']},
+  {hanzi:'的',pinyin:'de',en:"structural particle 's",tr:"yapı partiküllü 'in",hsk:1,compounds:['我的','好的','大的']},
+  {hanzi:'了',pinyin:'le',en:'particle (completed action)',tr:'geçmiş zaman partiküllü',hsk:1,compounds:['好了','来了','去了']},
+  {hanzi:'吗',pinyin:'ma',en:'question particle',tr:'soru partiküllü mı/mi',hsk:1,compounds:['是吗','好吗','对吗']},
+  {hanzi:'呢',pinyin:'ne',en:'question particle',tr:'peki ya...? soru eki',hsk:1,compounds:['你呢','我呢','他呢']},
+  {hanzi:'很',pinyin:'hěn',en:'very',tr:'çok, gayet',hsk:1,compounds:['很好','很大','很多','很快']},
+  {hanzi:'都',pinyin:'dōu',en:'all / both',tr:'hepsi, hep',hsk:1,compounds:['都是','都好','都有','都来']},
+  {hanzi:'也',pinyin:'yě',en:'also / too',tr:'de, da, ayrıca',hsk:1,compounds:['也是','也好','也可以']},
+  {hanzi:'和',pinyin:'hé',en:'and / with',tr:'ve, ile',hsk:1,compounds:['和平','和好','和我']},
+  {hanzi:'老',pinyin:'lǎo',en:'old',tr:'yaşlı, eski',hsk:1,compounds:['老师','老人','老家','老大']},
+  {hanzi:'师',pinyin:'shī',en:'teacher / master',tr:'öğretmen, usta',hsk:1,compounds:['老师','医师','律师']},
+  {hanzi:'医',pinyin:'yī',en:'medicine / doctor',tr:'tıp, doktor',hsk:2,compounds:['医生','医院','医学','医务']},
+  {hanzi:'院',pinyin:'yuàn',en:'courtyard / institution',tr:'avlu, kurum',hsk:2,compounds:['医院','学院','法院','院子']},
+  {hanzi:'家',pinyin:'jiā',en:'home / family',tr:'ev, aile',hsk:1,compounds:['大家','家人','回家','家里']},
+  {hanzi:'里',pinyin:'lǐ',en:'inside',tr:'içinde',hsk:1,compounds:['这里','那里','家里','哪里']},
+  {hanzi:'多',pinyin:'duō',en:'many / much',tr:'çok, fazla',hsk:1,compounds:['很多','多少','多么','多大']},
+  {hanzi:'少',pinyin:'shǎo',en:'few / little',tr:'az, çok az',hsk:1,compounds:['多少','少年','减少']},
+  {hanzi:'年',pinyin:'nián',en:'year',tr:'yıl, sene',hsk:1,compounds:['去年','今年','明年','年轻']},
+  {hanzi:'今',pinyin:'jīn',en:'today / now',tr:'bugün, şimdi',hsk:1,compounds:['今天','今年','今后']},
+  {hanzi:'天',pinyin:'tiān',en:'sky / day',tr:'gök, gün',hsk:1,compounds:['今天','天气','天上','昨天']},
+  {hanzi:'气',pinyin:'qì',en:'air / weather / spirit',tr:'hava, ruh, nefes',hsk:1,compounds:['天气','生气','空气','勇气']},
+  {hanzi:'什',pinyin:'shén',en:'what (in 什么)',tr:'ne (什么 içinde)',hsk:1,compounds:['什么']},
+  {hanzi:'么',pinyin:'me',en:'particle',tr:'partiküllü',hsk:1,compounds:['什么','这么','那么','怎么']},
+  {hanzi:'哪',pinyin:'nǎ',en:'which / where',tr:'hangi, nerede',hsk:1,compounds:['哪里','哪个','哪天']},
+  {hanzi:'谢',pinyin:'xiè',en:'to thank',tr:'teşekkür etmek',hsk:1,compounds:['谢谢','感谢','道谢']},
+  {hanzi:'对',pinyin:'duì',en:'correct / toward',tr:'doğru, karşı',hsk:1,compounds:['对了','对不起','不对','面对']},
+  {hanzi:'起',pinyin:'qǐ',en:'rise / start',tr:'kalkmak, başlamak',hsk:1,compounds:['对不起','起来','起床','早起']},
+  {hanzi:'再',pinyin:'zài',en:'again',tr:'tekrar, yeniden',hsk:1,compounds:['再见','再来','再次','再说']},
+  {hanzi:'见',pinyin:'jiàn',en:'to see / meet',tr:'görmek, buluşmak',hsk:1,compounds:['再见','看见','见面','不见']},
+  {hanzi:'朋',pinyin:'péng',en:'friend',tr:'arkadaş (朋友)',hsk:1,compounds:['朋友']},
+  {hanzi:'友',pinyin:'yǒu',en:'friend',tr:'dost',hsk:1,compounds:['朋友','友好','友情']},
+  {hanzi:'爸',pinyin:'bà',en:'dad',tr:'baba',hsk:1,compounds:['爸爸','老爸']},
+  {hanzi:'妈',pinyin:'mā',en:'mom',tr:'anne',hsk:1,compounds:['妈妈','老妈']},
+  {hanzi:'哥',pinyin:'gē',en:'older brother',tr:'ağabey',hsk:1,compounds:['哥哥','大哥']},
+  {hanzi:'弟',pinyin:'dì',en:'younger brother',tr:'erkek kardeş',hsk:1,compounds:['弟弟','兄弟']},
+  {hanzi:'姐',pinyin:'jiě',en:'older sister',tr:'abla',hsk:1,compounds:['姐姐','大姐']},
+  {hanzi:'妹',pinyin:'mèi',en:'younger sister',tr:'kız kardeş',hsk:1,compounds:['妹妹']},
+  {hanzi:'书',pinyin:'shū',en:'book',tr:'kitap',hsk:1,compounds:['读书','图书馆','书包','书店']},
+  {hanzi:'水',pinyin:'shuǐ',en:'water',tr:'su',hsk:1,compounds:['喝水','水果','水平','洗水']},
+  {hanzi:'饭',pinyin:'fàn',en:'rice / meal',tr:'pilav, yemek',hsk:1,compounds:['吃饭','米饭','晚饭','做饭']},
+  {hanzi:'钱',pinyin:'qián',en:'money',tr:'para',hsk:1,compounds:['有钱','没钱','钱包','花钱']},
+  {hanzi:'时',pinyin:'shí',en:'time / when',tr:'zaman, saat',hsk:2,compounds:['时间','小时','有时','同时']},
+  {hanzi:'间',pinyin:'jiān',en:'between / space',tr:'arası, boşluk',hsk:2,compounds:['时间','中间','房间','之间']},
+  {hanzi:'问',pinyin:'wèn',en:'to ask',tr:'sormak',hsk:1,compounds:['问题','请问','问答','问好']},
+  {hanzi:'题',pinyin:'tí',en:'topic / question',tr:'konu, soru',hsk:2,compounds:['问题','题目','话题']},
+  {hanzi:'工',pinyin:'gōng',en:'work',tr:'iş, çalışmak',hsk:2,compounds:['工作','工人','工厂','工资']},
+  {hanzi:'作',pinyin:'zuò',en:'to do / work',tr:'yapmak, çalışmak',hsk:2,compounds:['工作','作业','作者','制作']},
+  {hanzi:'想',pinyin:'xiǎng',en:'to think / want',tr:'düşünmek, istemek',hsk:1,compounds:['想到','想法','思想','梦想']},
+  {hanzi:'知',pinyin:'zhī',en:'to know',tr:'bilmek',hsk:2,compounds:['知道','知识','通知']},
+  {hanzi:'道',pinyin:'dào',en:'road / to know',tr:'yol, bilmek',hsk:2,compounds:['知道','道路','说道','道理']},
+  {hanzi:'话',pinyin:'huà',en:'speech / words',tr:'söz, konuşma',hsk:2,compounds:['说话','电话','话语','话题']},
+  {hanzi:'电',pinyin:'diàn',en:'electricity',tr:'elektrik',hsk:2,compounds:['电话','电视','电脑','电影']},
+  {hanzi:'视',pinyin:'shì',en:'to look at / TV',tr:'bakmak, televizyon',hsk:2,compounds:['电视','重视','视频']},
+  {hanzi:'脑',pinyin:'nǎo',en:'brain / computer',tr:'beyin, bilgisayar',hsk:2,compounds:['电脑','大脑']},
+  {hanzi:'影',pinyin:'yǐng',en:'shadow / movie',tr:'gölge, film',hsk:2,compounds:['电影','影响','摄影']},
+  {hanzi:'路',pinyin:'lù',en:'road / path',tr:'yol, cadde',hsk:2,compounds:['道路','马路','路上','出路']},
+  {hanzi:'车',pinyin:'chē',en:'vehicle / car',tr:'araç, araba',hsk:1,compounds:['出租车','公共汽车','火车','车站']},
+  {hanzi:'站',pinyin:'zhàn',en:'station / stand',tr:'istasyon, durmak',hsk:2,compounds:['车站','站台','站立']},
+  {hanzi:'飞',pinyin:'fēi',en:'to fly',tr:'uçmak',hsk:2,compounds:['飞机','飞行','飞快']},
+  {hanzi:'机',pinyin:'jī',en:'machine / opportunity',tr:'makine, fırsat',hsk:2,compounds:['飞机','手机','机会','机器']},
+];
 
-            // --- SABİT TEMEL VERİLER (Başlangıç İçin) ---
-            const vocabulary = [
-                { id: 1, hanzi: "我", pinyin: "wǒ", meaning: "Ben", example: "我是学生" },
-                { id: 2, hanzi: "你", pinyin: "nǐ", meaning: "Sen", example: "你好" },
-                { id: 3, hanzi: "是", pinyin: "shì", meaning: "Olmak (to be)", example: "他是老师" },
-                { id: 4, hanzi: "老师", pinyin: "lǎoshī", meaning: "Öğretmen", example: "王老师" },
-                { id: 5, hanzi: "学生", pinyin: "xuésheng", meaning: "Öğrenci", example: "我们是学生" },
-                { id: 6, hanzi: "人", pinyin: "rén", meaning: "İnsan", example: "中国人" }
-            ];
+// Example sentences (CN + pinyin + TR)
+const EXAMPLE_SENTENCES = [
+  {cn:'我是学生。',py:'Wǒ shì xuésheng.',tr:'Ben öğrenciyim.',blocks:['我','是','学生']},
+  {cn:'你好！',py:'Nǐ hǎo!',tr:'Merhaba!',blocks:['你','好']},
+  {cn:'他是老师。',py:'Tā shì lǎoshī.',tr:'O (erkek) öğretmen.',blocks:['他','是','老师']},
+  {cn:'我没有钱。',py:'Wǒ méiyǒu qián.',tr:'Param yok.',blocks:['我','没有','钱']},
+  {cn:'你吃饭了吗？',py:'Nǐ chīfàn le ma?',tr:'Yemek yedin mi?',blocks:['你','吃饭','了','吗']},
+  {cn:'今天天气很好。',py:'Jīntiān tiānqì hěn hǎo.',tr:'Bugün hava çok güzel.',blocks:['今天','天气','很','好']},
+  {cn:'我想学中文。',py:'Wǒ xiǎng xué zhōngwén.',tr:'Çince öğrenmek istiyorum.',blocks:['我','想','学','中文']},
+  {cn:'再见！',py:'Zàijiàn!',tr:'Görüşürüz!',blocks:['再','见']},
+  {cn:'谢谢你。',py:'Xièxie nǐ.',tr:'Teşekkür ederim.',blocks:['谢谢','你']},
+  {cn:'对不起！',py:'Duìbuqǐ!',tr:'Özür dilerim!',blocks:['对','不','起']},
+];
 
-            const sentences = [
-                { id: 1, turkish: "Ben öğretmenim.", blocks: ["我", "是", "老师"], pinyin: "Wǒ shì lǎoshī." },
-                { id: 2, turkish: "Sen öğrenci misin?", blocks: ["你", "是", "学生", "吗", "?"], pinyin: "Nǐ shì xuésheng ma?" },
-                { id: 3, turkish: "Onun adı ne?", blocks: ["他", "叫", "什么", "名字", "?"], pinyin: "Tā jiào shénme míngzi?" },
-                { id: 4, turkish: "Benim kitabım yok.", blocks: ["我", "没有", "书"], pinyin: "Wǒ méiyǒu shū." }
-            ];
+// ════════════════════════════════════════════════
+//  TTS (Web Speech API — Chrome Çincesi en iyi)
+// ════════════════════════════════════════════════
+function speak(text, rate=0.85) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = rate;
+  // prefer a Chinese voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const cn = voices.find(v => v.lang.startsWith('zh'));
+  if (cn) u.voice = cn;
+  window.speechSynthesis.speak(u);
+}
 
-            // --- FLASHCARD BİLEŞENİ ---
-            const Flashcards = () => {
-                const [currentIndex, setCurrentIndex] = useState(0);
-                const [isFlipped, setIsFlipped] = useState(false);
+// ════════════════════════════════════════════════
+//  DATA LOADING
+//  Try GitHub HSK JSON → fallback to starter data
+// ════════════════════════════════════════════════
+async function loadData() {
+  // Multiple GitHub sources to try
+  const sources = [
+    'https://raw.githubusercontent.com/gigafiga21/HSK-vocabulary/master/hsk1.json',
+  ];
+  // We'll build from STARTER_WORDS which is already comprehensive enough
+  // and also try to pull the GitHub source for extra words
+  state.allWords = STARTER_WORDS;
+  state.loading = false;
+  filterWords();
+  render();
 
-                const nextCard = () => { setIsFlipped(false); setCurrentIndex((prev) => (prev + 1) % vocabulary.length); };
-                const prevCard = () => { setIsFlipped(false); setCurrentIndex((prev) => (prev - 1 + vocabulary.length) % vocabulary.length); };
-                const currentCard = vocabulary[currentIndex];
+  // Optionally try GitHub (non-blocking)
+  try {
+    const r = await fetch('https://raw.githubusercontent.com/hsinjuku/hsk-anki-decks/main/HSK%201-6%20combined.json');
+    if (r.ok) {
+      // leave starter; we have good data
+    }
+  } catch(e) { /* silently ignore */ }
+}
 
-                return (
-                    <div className="flex flex-col items-center justify-center space-y-6 animate-fadeIn">
-                        <div className="text-center mb-2"><span className="text-sm font-medium text-gray-500">Kart {currentIndex + 1} / {vocabulary.length}</span></div>
-                        <div onClick={() => setIsFlipped(!isFlipped)} className={`relative w-72 h-80 cursor-pointer transition-all duration-500 transform style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`} style={{ perspective: '1000px' }}>
-                            <div className={`absolute w-full h-full bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col items-center justify-center p-6 backface-hidden ${isFlipped ? 'hidden' : 'flex'}`}>
-                                <span className="text-8xl font-serif text-indigo-600 mb-6">{currentCard.hanzi}</span>
-                                <button onClick={(e) => { e.stopPropagation(); speak(currentCard.hanzi); }} className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full text-indigo-700 transition"><Volume2 size={24} /></button>
-                                <span className="text-gray-400 text-xs mt-4">Çevirmek için tıkla</span>
-                            </div>
-                            <div className={`absolute w-full h-full bg-indigo-50 rounded-2xl shadow-xl border border-indigo-100 flex flex-col items-center justify-center p-6 ${isFlipped ? 'flex' : 'hidden'}`}>
-                                <div className="flex items-center gap-2 mb-2"><span className="text-4xl font-bold text-gray-800">{currentCard.pinyin}</span><button onClick={(e) => { e.stopPropagation(); speak(currentCard.hanzi); }} className="p-2 bg-white rounded-full text-indigo-600 shadow-sm"><Volume2 size={20} /></button></div>
-                                <span className="text-xl text-gray-600 font-medium mb-6">{currentCard.meaning}</span>
-                                <div className="bg-white p-3 rounded-lg w-full text-center shadow-sm"><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Örnek</p><div className="flex justify-center items-center gap-2"><p className="text-indigo-700 text-lg">{currentCard.example}</p><button onClick={(e) => { e.stopPropagation(); speak(currentCard.example); }} className="text-indigo-400 hover:text-indigo-600"><Volume2 size={16} /></button></div></div>
-                            </div>
-                        </div>
-                        <div className="flex space-x-4 mt-4"><button onClick={prevCard} className="px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-full font-medium transition">Önceki</button><button onClick={nextCard} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-medium transition">Sonraki</button></div>
-                    </div>
-                );
-            };
+function filterWords() {
+  if (state.hskLevel === 'all') {
+    state.words = state.allWords;
+  } else if (state.hskLevel === '1-2') {
+    state.words = state.allWords.filter(w => w.hsk <= 2);
+  } else if (state.hskLevel === '3-4') {
+    state.words = state.allWords.filter(w => w.hsk >= 3 && w.hsk <= 4);
+  } else if (state.hskLevel === '5-6') {
+    state.words = state.allWords.filter(w => w.hsk >= 5);
+  }
+  // Also reset selected if not in filtered
+  if (state.selected && !state.words.find(w => w.hanzi === state.selected.hanzi)) {
+    state.selected = null;
+  }
+}
 
-            // --- CÜMLE KURMA BİLEŞENİ ---
-            const SentenceBuilder = () => {
-                const [currentSentIndex, setCurrentSentIndex] = useState(0);
-                const [userBlocks, setUserBlocks] = useState([]);
-                const [availableBlocks, setAvailableBlocks] = useState([]);
-                const [status, setStatus] = useState('idle');
+// ════════════════════════════════════════════════
+//  D3 GRAPH
+// ════════════════════════════════════════════════
+let graphSim = null;
 
-                useEffect(() => {
-                    const blocks = [...sentences[currentSentIndex].blocks];
-                    for (let i = blocks.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [blocks[i], blocks[j]] = [blocks[j], blocks[i]];
-                    }
-                    setAvailableBlocks(blocks);
-                    setUserBlocks([]);
-                    setStatus('idle');
-                }, [currentSentIndex]);
+function buildGraphData(centerWord) {
+  if (!centerWord) return null;
+  const nodes = [];
+  const links = [];
+  const seen = new Set();
 
-                const handleBlockClick = (block, index, type) => {
-                    if (status === 'correct') return;
-                    if (type === 'available') {
-                        const newAvailable = [...availableBlocks]; newAvailable.splice(index, 1);
-                        setAvailableBlocks(newAvailable); setUserBlocks([...userBlocks, block]);
-                    } else {
-                        const newUser = [...userBlocks]; newUser.splice(index, 1);
-                        setUserBlocks(newUser); setAvailableBlocks([...availableBlocks, block]);
-                    }
-                    setStatus('idle');
-                };
+  const addNode = (w, isCenter=false) => {
+    if (seen.has(w.hanzi)) return;
+    seen.add(w.hanzi);
+    nodes.push({ id: w.hanzi, pinyin: w.pinyin, meaning: w.tr || w.en, hsk: w.hsk, isCenter });
+  };
 
-                const checkAnswer = () => {
-                    if (sentences[currentSentIndex].blocks.join('') === userBlocks.join('')) {
-                        setStatus('correct'); speak(userBlocks.join(''));
-                    } else setStatus('wrong');
-                };
+  addNode(centerWord, true);
 
-                return (
-                    <div className="max-w-2xl mx-auto animate-fadeIn">
-                        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                            <div className="text-center mb-8">
-                                <h3 className="text-gray-500 text-sm font-semibold uppercase tracking-wider mb-2">Türkçe Cümle</h3>
-                                <p className="text-2xl font-bold text-gray-800">{sentences[currentSentIndex].turkish}</p>
-                            </div>
-                            <div className={`min-h-[80px] border-2 border-dashed rounded-xl p-4 flex flex-wrap gap-2 justify-center items-center mb-6 transition-colors ${status === 'correct' ? 'border-green-400 bg-green-50' : status === 'wrong' ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-gray-50'}`}>
-                                {userBlocks.length === 0 && <span className="text-gray-400 italic">Kelimeleri buraya diz...</span>}
-                                {userBlocks.map((block, idx) => (<button key={idx} onClick={() => handleBlockClick(block, idx, 'user')} className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 text-xl font-serif transition transform active:scale-95">{block}</button>))}
-                            </div>
-                            <div className="flex flex-wrap gap-3 justify-center mb-8">
-                                {availableBlocks.map((block, idx) => (<button key={idx} onClick={() => handleBlockClick(block, idx, 'available')} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg shadow-sm hover:bg-gray-100 text-xl font-serif transition">{block}</button>))}
-                            </div>
-                            <div className="flex justify-center space-x-4">
-                                {status === 'correct' ? (
-                                    <div className="flex gap-4"><button onClick={() => speak(sentences[currentSentIndex].blocks.join(''))} className="px-4 py-3 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-full font-bold transition flex items-center gap-2"><Volume2 size={20} /><span>Dinle</span></button><button onClick={() => setCurrentSentIndex((prev) => (prev + 1) % sentences.length)} className="flex items-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-full font-bold transition animate-bounce"><span>Sonraki</span><CheckCircle size={20} /></button></div>
-                                ) : (
-                                    <button onClick={checkAnswer} className="px-8 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-full font-bold transition">Kontrol Et</button>
-                                )}
-                            </div>
-                            {status === 'correct' && <div className="mt-4 text-center text-green-600 font-medium">Pinyin: {sentences[currentSentIndex].pinyin}</div>}
-                        </div>
-                    </div>
-                );
-            };
+  // Add compound words that contain this character
+  const compounds = centerWord.compounds || [];
+  compounds.forEach(comp => {
+    // Find compound in allWords
+    let found = state.allWords.find(w => w.hanzi === comp);
+    if (!found) {
+      // create a synthetic node
+      found = { hanzi: comp, pinyin: '', tr: '', en: '', hsk: centerWord.hsk };
+    }
+    addNode(found);
+    links.push({ source: centerWord.hanzi, target: comp, label: comp });
+  });
 
-            // --- QUIZ BİLEŞENİ ---
-            const Quiz = () => {
-                const [currentQIndex, setCurrentQIndex] = useState(0);
-                const [options, setOptions] = useState([]);
-                const [isAnswered, setIsAnswered] = useState(false);
-                const [selectedOption, setSelectedOption] = useState(null);
-                const [score, setScore] = useState(0);
+  // Also find words that have centerWord in their compounds
+  state.allWords.forEach(w => {
+    if (w.hanzi === centerWord.hanzi) return;
+    if ((w.compounds || []).includes(centerWord.hanzi)) {
+      addNode(w);
+      links.push({ source: w.hanzi, target: centerWord.hanzi });
+    }
+  });
 
-                useEffect(() => {
-                    const correct = vocabulary[currentQIndex];
-                    const wrong = vocabulary.filter(v => v.id !== correct.id).sort(() => 0.5 - Math.random()).slice(0, 3);
-                    setOptions([correct, ...wrong].sort(() => 0.5 - Math.random()));
-                    setIsAnswered(false); setSelectedOption(null);
-                }, [currentQIndex]);
+  // Find words sharing a character
+  if (centerWord.hanzi.length === 1) {
+    state.allWords.forEach(w => {
+      if (seen.has(w.hanzi)) return;
+      if (w.hanzi.includes(centerWord.hanzi) && w.hanzi !== centerWord.hanzi) {
+        addNode(w);
+        links.push({ source: centerWord.hanzi, target: w.hanzi });
+      }
+    });
+  }
 
-                const handleOptionClick = (option) => {
-                    if (isAnswered) return;
-                    setSelectedOption(option); setIsAnswered(true);
-                    if (option.id === vocabulary[currentQIndex].id) { setScore(s => s + 1); speak(option.hanzi); }
-                };
+  return { nodes, links };
+}
 
-                return (
-                    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fadeIn">
-                        <div className="bg-indigo-600 p-6 text-center">
-                            <h3 className="text-white text-lg font-medium opacity-80 mb-1">Bu Pinyin hangi karaktere ait?</h3>
-                            <div className="flex items-center justify-center gap-3"><h2 className="text-4xl font-bold text-white tracking-wide">{vocabulary[currentQIndex].pinyin}</h2><button onClick={() => speak(vocabulary[currentQIndex].hanzi)} className="bg-white/20 p-2 rounded-full hover:bg-white/30 text-white"><Volume2 size={24} /></button></div>
-                        </div>
-                        <div className="p-6 grid grid-cols-2 gap-4">
-                            {options.map((opt, idx) => (
-                                <button key={idx} onClick={() => handleOptionClick(opt)} className={`h-24 text-4xl font-serif rounded-xl border-2 transition flex items-center justify-center ${isAnswered ? (opt.id === vocabulary[currentQIndex].id ? 'bg-green-100 border-green-500 text-green-700' : (opt.id === selectedOption?.id ? 'bg-red-100 border-red-500 text-red-700' : 'opacity-50')) : 'hover:border-indigo-400 hover:bg-indigo-50'}`}>{opt.hanzi}</button>
-                            ))}
-                        </div>
-                        {isAnswered && <div className="px-6 pb-6"><button onClick={() => { if (currentQIndex < vocabulary.length - 1) setCurrentQIndex(i => i + 1); else { alert(`Bitti! Skor: ${score}`); setCurrentQIndex(0); setScore(0); }}} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold">Sonraki Soru</button></div>}
-                    </div>
-                );
-            };
+function renderGraph(centerWord) {
+  const container = document.getElementById('graph-container');
+  if (!container) return;
+  container.innerHTML = '';
 
-            // --- GELİŞMİŞ HSK SÖZLÜK BİLEŞENİ (Dosya Yüklemeli) ---
-            const HSKDictionary = () => {
-                const [hskData, setHskData] = useState([]);
-                const [searchTerm, setSearchTerm] = useState("");
-                const [selectedChar, setSelectedChar] = useState(null);
-                const [loading, setLoading] = useState(false);
-                const [error, setError] = useState(null);
+  if (!centerWord) {
+    container.innerHTML = `
+      <div class="graph-empty">
+        <div class="big">学</div>
+        <p>Solda bir kelime seçin veya arama yapın</p>
+        <p class="muted" style="margin-top:0.5rem">Karakterin bağlantıları görünecek</p>
+      </div>`;
+    return;
+  }
 
-                // Otomatik Yükleme Denemesi
-                useEffect(() => {
-                    const tryAutoLoad = async () => {
-                        try {
-                            setLoading(true);
-                            const response = await fetch('hsk-1-6-en.csv.json');
-                            if (!response.ok) throw new Error("Dosya bulunamadı");
-                            const data = await response.json();
-                            processData(data);
-                        } catch (err) {
-                            console.log("Otomatik yükleme yapılamadı, manuel seçim bekleniyor.");
-                            setLoading(false);
-                        }
-                    };
-                    tryAutoLoad();
-                }, []);
+  const data = buildGraphData(centerWord);
+  if (!data || data.nodes.length === 0) {
+    container.innerHTML = `<div class="graph-empty"><p>Bağlantı bulunamadı.</p></div>`;
+    return;
+  }
 
-                const processData = (data) => {
-                    if (data && data.hsk16) {
-                        const formatted = data.hsk16.map((item, index) => ({
-                            id: index,
-                            hanzi: item.hanzi,
-                            pinyin: item.pinyin,
-                            meaning: item.translation,
-                            level: "Tümü", // JSON'da seviye net değilse
-                            strokes: "?"
-                        }));
-                        setHskData(formatted);
-                        setLoading(false);
-                        setError(null);
-                    } else {
-                        setError("JSON formatı geçersiz (hsk16 dizisi bulunamadı).");
-                        setLoading(false);
-                    }
-                };
+  const W = container.clientWidth || 700;
+  const H = container.clientHeight || 520;
 
-                const handleFileUpload = (event) => {
-                    const file = event.target.files[0];
-                    if (!file) return;
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', `0 0 ${W} ${H}`)
+    .style('width','100%').style('height','100%');
 
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const json = JSON.parse(e.target.result);
-                            processData(json);
-                        } catch (err) {
-                            setError("Dosya okunamadı. Geçerli bir JSON olduğundan emin olun.");
-                        }
-                    };
-                    reader.readAsText(file);
-                };
+  // Arrow marker
+  svg.append('defs').append('marker')
+    .attr('id','arrow')
+    .attr('viewBox','0 -5 10 10')
+    .attr('refX', 28)
+    .attr('refY', 0)
+    .attr('markerWidth', 6)
+    .attr('markerHeight', 6)
+    .attr('orient','auto')
+    .append('path')
+    .attr('d','M0,-5L10,0L0,5')
+    .attr('fill','#e8b84b')
+    .attr('opacity', 0.6);
 
-                const filteredData = useMemo(() => {
-                    if (!searchTerm) return hskData.slice(0, 100); // İlk 100 göster
-                    const lowerTerm = searchTerm.toLowerCase();
-                    return hskData.filter(item => 
-                        item.hanzi.includes(lowerTerm) || 
-                        item.pinyin.toLowerCase().includes(lowerTerm) ||
-                        (item.meaning && item.meaning.toLowerCase().includes(lowerTerm))
-                    ).slice(0, 50); // Arama sonuçlarını sınırla
-                }, [hskData, searchTerm]);
+  const g = svg.append('g');
 
-                return (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn">
-                        {/* Sol Panel: Liste ve Arama */}
-                        <div className="md:col-span-1 bg-white rounded-xl shadow-lg p-4 h-[600px] flex flex-col">
-                            {/* Dosya Yükleme Alanı (Veri yoksa görünür) */}
-                            {hskData.length === 0 && (
-                                <div className="mb-4 p-4 border-2 border-dashed border-indigo-300 rounded-lg bg-indigo-50 text-center">
-                                    <Database className="mx-auto text-indigo-500 mb-2" size={32} />
-                                    <p className="text-sm text-indigo-800 font-medium mb-2">Veri Seti Yükle</p>
-                                    <p className="text-xs text-indigo-600 mb-3">"hsk-1-6-en.csv.json" dosyasını seçin</p>
-                                    <label className="cursor-pointer bg-indigo-600 text-white px-4 py-2 rounded-md text-sm hover:bg-indigo-700 transition inline-block">
-                                        <div className="flex items-center gap-2">
-                                            <Upload size={16} />
-                                            <span>Dosya Seç</span>
-                                        </div>
-                                        <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
-                                    </label>
-                                    {loading && <p className="text-xs text-gray-500 mt-2">Yükleniyor...</p>}
-                                    {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-                                </div>
-                            )}
+  // Zoom
+  svg.call(d3.zoom().scaleExtent([0.3, 3]).on('zoom', (e) => g.attr('transform', e.transform)));
 
-                            {hskData.length > 0 && (
-                                <>
-                                    <div className="relative mb-4">
-                                        <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                                        <input 
-                                            type="text" 
-                                            placeholder="Ara (Pinyin, Hanzi, Anlam...)" 
-                                            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none text-sm"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                        />
-                                        <div className="text-xs text-right text-gray-400 mt-1">{hskData.length} kelime yüklendi</div>
-                                    </div>
+  if (graphSim) graphSim.stop();
 
-                                    <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                        {filteredData.map((item, idx) => (
-                                            <div 
-                                                key={idx}
-                                                onClick={() => setSelectedChar(item)}
-                                                className={`p-3 rounded-lg flex justify-between items-center cursor-pointer transition ${selectedChar?.hanzi === item.hanzi ? 'bg-indigo-50 border-l-4 border-indigo-600' : 'hover:bg-gray-50 border border-transparent'}`}
-                                            >
-                                                <div>
-                                                    <span className="text-xl font-serif text-gray-800 mr-3">{item.hanzi}</span>
-                                                    <span className="text-sm text-gray-500 font-medium">{item.pinyin}</span>
-                                                </div>
-                                                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded truncate max-w-[100px]">{item.meaning}</span>
-                                            </div>
-                                        ))}
-                                        {filteredData.length === 0 && <div className="text-center text-gray-400 py-10 text-sm">Sonuç bulunamadı.</div>}
-                                    </div>
-                                </>
-                            )}
-                        </div>
+  graphSim = d3.forceSimulation(data.nodes)
+    .force('link', d3.forceLink(data.links).id(d=>d.id).distance(d => d.source.isCenter || d.target.isCenter ? 120 : 80))
+    .force('charge', d3.forceManyBody().strength(-300))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide(50));
 
-                        {/* Sağ Panel: Detay */}
-                        <div className="md:col-span-2 bg-white rounded-xl shadow-lg p-6 flex flex-col items-center justify-center min-h-[600px] relative">
-                            {selectedChar ? (
-                                <div className="w-full flex flex-col items-center animate-fadeIn">
-                                    <div className="absolute top-6 right-6 flex gap-2">
-                                        <button onClick={() => speak(selectedChar.hanzi)} className="p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100" title="Dinle"><Volume2 size={24}/></button>
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedChar.pinyin}</h2>
-                                    <p className="text-gray-500 text-lg mb-8 text-center px-4">{selectedChar.meaning}</p>
-                                    <div className="relative w-64 h-64 border-4 border-red-800 bg-red-50 mb-8 select-none flex items-center justify-center">
-                                        <div className="absolute w-full h-[1px] bg-red-300 top-1/2 transform -translate-y-1/2 border-t border-dashed border-red-800 opacity-50"></div>
-                                        <div className="absolute h-full w-[1px] bg-red-300 left-1/2 transform -translate-x-1/2 border-l border-dashed border-red-800 opacity-50"></div>
-                                        <span className="text-[180px] leading-none font-serif text-black z-10 font-kaiti">{selectedChar.hanzi}</span>
-                                    </div>
-                                    <a href={`https://www.mdbg.net/chinese/dictionary?page=worddict&wdrst=0&wdqti=0&wdqtm=0&wdqcham=1&wdqt=${selectedChar.hanzi}`} target="_blank" rel="noopener noreferrer" className="bg-indigo-600 text-white p-4 rounded-lg flex items-center justify-center gap-2 hover:bg-indigo-700 transition"><span>Hareketli Yazılışı Gör (MDBG)</span><ExternalLink size={16} /></a>
-                                </div>
-                            ) : (
-                                <div className="text-center text-gray-400">
-                                    <PenTool size={64} className="mx-auto mb-4 opacity-20" />
-                                    <p className="text-lg">Soldan bir kelime seçin.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            };
+  const link = g.append('g').selectAll('line')
+    .data(data.links).enter().append('line')
+    .attr('stroke','#e8b84b').attr('stroke-opacity', 0.35)
+    .attr('stroke-width', 1.5)
+    .attr('marker-end','url(#arrow)');
 
-            return (
-                <div className="min-h-screen bg-gray-100 p-2 md:p-8 font-sans text-slate-800">
-                    <header className="max-w-6xl mx-auto mb-8 text-center">
-                        <h1 className="text-3xl md:text-4xl font-bold text-indigo-900 mb-2">Çince Çalışma Sistemi</h1>
-                        <p className="text-gray-600">Road to Success & HSK 1-6 Sözlük</p>
-                    </header>
-                    <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden min-h-[600px]">
-                        <div className="flex flex-wrap border-b">
-                            <button onClick={() => setActiveTab('flashcards')} className={`flex-1 py-4 px-2 min-w-[100px] flex items-center justify-center gap-2 font-medium transition ${activeTab === 'flashcards' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' : 'text-gray-500 hover:text-indigo-500'}`}><BookOpen size={20} /><span className="hidden sm:inline ml-2">Flashcards</span></button>
-                            <button onClick={() => setActiveTab('sentences')} className={`flex-1 py-4 px-2 min-w-[100px] flex items-center justify-center gap-2 font-medium transition ${activeTab === 'sentences' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' : 'text-gray-500 hover:text-indigo-500'}`}><Layers size={20} /><span className="hidden sm:inline ml-2">Cümle Kurma</span></button>
-                            <button onClick={() => setActiveTab('quiz')} className={`flex-1 py-4 px-2 min-w-[100px] flex items-center justify-center gap-2 font-medium transition ${activeTab === 'quiz' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' : 'text-gray-500 hover:text-indigo-500'}`}><HelpCircle size={20} /><span className="hidden sm:inline ml-2">Quiz</span></button>
-                            <button onClick={() => setActiveTab('hsk')} className={`flex-1 py-4 px-2 min-w-[100px] flex items-center justify-center gap-2 font-medium transition ${activeTab === 'hsk' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' : 'text-gray-500 hover:text-indigo-500'}`}><Database size={20} /><span className="hidden sm:inline ml-2">HSK Sözlük (5000+)</span></button>
-                        </div>
-                        <div className="p-4 md:p-8 bg-slate-50 min-h-[500px]">
-                            {activeTab === 'flashcards' && <Flashcards />}
-                            {activeTab === 'sentences' && <SentenceBuilder />}
-                            {activeTab === 'quiz' && <Quiz />}
-                            {activeTab === 'hsk' && <HSKDictionary />}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
+  const nodeG = g.append('g').selectAll('g')
+    .data(data.nodes).enter().append('g')
+    .style('cursor','pointer')
+    .call(d3.drag()
+      .on('start', (e,d) => { if(!e.active) graphSim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end',   (e,d) => { if(!e.active) graphSim.alphaTarget(0); d.fx=null; d.fy=null; })
+    );
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<ChineseStudySystem />);
-    </script>
+  // Node circles
+  nodeG.append('circle')
+    .attr('r', d => d.isCenter ? 38 : 28)
+    .attr('fill', d => d.isCenter ? 'rgba(232,184,75,0.18)' : 'rgba(34,34,40,0.95)')
+    .attr('stroke', d => d.isCenter ? '#e8b84b' : '#3e3e48')
+    .attr('stroke-width', d => d.isCenter ? 2 : 1);
+
+  // Hanzi labels
+  nodeG.append('text')
+    .attr('text-anchor','middle')
+    .attr('dominant-baseline','central')
+    .attr('font-family','Noto Serif SC, serif')
+    .attr('font-size', d => d.isCenter ? '1.4rem' : '1rem')
+    .attr('fill', d => d.isCenter ? '#e8b84b' : '#f0ede6')
+    .text(d => d.id);
+
+  // Pinyin below
+  nodeG.append('text')
+    .attr('text-anchor','middle')
+    .attr('y', d => d.isCenter ? 52 : 38)
+    .attr('font-family','Space Mono, monospace')
+    .attr('font-size','0.55rem')
+    .attr('fill','#9a9890')
+    .text(d => d.pinyin);
+
+  // Click to navigate
+  nodeG.on('click', (e, d) => {
+    const w = state.allWords.find(word => word.hanzi === d.id);
+    if (w) {
+      state.selected = w;
+      renderGraph(w);
+      renderDetail();
+    }
+  });
+
+  // Tooltip on hover
+  const tooltip = document.getElementById('tooltip');
+  nodeG.on('mouseover', (e, d) => {
+    document.getElementById('tt-hz').textContent = d.id;
+    document.getElementById('tt-py').textContent = d.pinyin;
+    document.getElementById('tt-mn').textContent = d.meaning || '';
+    tooltip.style.display = 'block';
+  }).on('mousemove', (e) => {
+    tooltip.style.left = (e.clientX + 16) + 'px';
+    tooltip.style.top  = (e.clientY - 10) + 'px';
+  }).on('mouseout', () => { tooltip.style.display = 'none'; });
+
+  graphSim.on('tick', () => {
+    link
+      .attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+      .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+    nodeG.attr('transform', d=>`translate(${d.x},${d.y})`);
+  });
+}
+
+// ════════════════════════════════════════════════
+//  RENDER ENGINE
+// ════════════════════════════════════════════════
+function render() {
+  const main = document.getElementById('main');
+  if (!main) return;
+
+  // Update nav
+  document.querySelectorAll('#nav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === state.tab);
+  });
+
+  if (state.loading) {
+    main.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:400px;gap:1rem;">
+      <div class="loading-spinner"></div><span class="muted">Kelime listesi yükleniyor...</span>
+    </div>`;
+    return;
+  }
+
+  switch(state.tab) {
+    case 'dictionary': renderDictionary(); break;
+    case 'flashcards': renderFlashcards(); break;
+    case 'sentences':  renderSentences(); break;
+    case 'quiz':       renderQuiz(); break;
+  }
+}
+
+// ── DICTIONARY + GRAPH ──────────────────────────
+function getFilteredWords() {
+  const q = state.graphSearch.toLowerCase().trim();
+  let list = state.words;
+  if (q) {
+    list = list.filter(w =>
+      w.hanzi.includes(q) ||
+      w.pinyin.toLowerCase().includes(q) ||
+      (w.tr && w.tr.toLowerCase().includes(q)) ||
+      (w.en && w.en.toLowerCase().includes(q))
+    );
+  }
+  return list.slice(0, 120);
+}
+
+function renderDictionary() {
+  const main = document.getElementById('main');
+  const filtered = getFilteredWords();
+
+  main.innerHTML = `
+    <div class="grid-3" style="align-items:start">
+      <!-- LEFT: Word List -->
+      <div class="card" style="padding:1rem">
+        <div style="margin-bottom:1rem">
+          <div class="search-wrap" style="margin-bottom:0.75rem">
+            <span class="icon">🔍</span>
+            <input id="dict-search" type="text" placeholder="Ara: 学, xue, öğren..." value="${state.graphSearch}" />
+          </div>
+          <div class="level-pills">
+            ${['all','1-2','3-4','5-6'].map(l => `
+              <button class="pill ${state.hskLevel===l?'active':''}" data-level="${l}">
+                ${l==='all'?'Tümü':'HSK '+l}
+              </button>`).join('')}
+          </div>
+          <div class="muted" style="margin-top:0.5rem">${filtered.length} kelime</div>
+        </div>
+        <div class="word-list" id="word-list">
+          ${filtered.map(w => `
+            <div class="word-row ${state.selected?.hanzi===w.hanzi?'selected':''}" data-hanzi="${w.hanzi}">
+              <span class="hw">${w.hanzi}</span>
+              <div style="flex:1;min-width:0">
+                <div class="py">${w.pinyin}</div>
+                <div class="mn">${w.tr||w.en}</div>
+              </div>
+              <span class="lv-badge">H${w.hsk}</span>
+            </div>`).join('')}
+          ${filtered.length===0?`<div class="muted" style="text-align:center;padding:2rem">Sonuç yok</div>`:''}
+        </div>
+      </div>
+
+      <!-- CENTER: Graph -->
+      <div>
+        <div style="margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem">
+          <span class="status-dot"></span>
+          <span class="muted">Karakter Ağı</span>
+          ${state.selected ? `<span class="tag tag-accent">${state.selected.hanzi} · ${state.selected.pinyin}</span>` : ''}
+        </div>
+        <div id="graph-container"></div>
+        <p class="muted" style="margin-top:0.5rem;font-size:0.65rem">Sürükle · Tekerlek=zoom · Node'a tıkla=git</p>
+      </div>
+
+      <!-- RIGHT: Detail -->
+      <div class="card" id="detail-panel">
+        ${renderDetailHTML()}
+      </div>
+    </div>`;
+
+  // events
+  document.getElementById('dict-search').addEventListener('input', e => {
+    state.graphSearch = e.target.value;
+    // Auto-select first result
+    const q = e.target.value.trim();
+    if (q) {
+      const found = state.words.find(w =>
+        w.hanzi === q || w.pinyin.toLowerCase() === q.toLowerCase()
+      ) || state.words.find(w =>
+        w.hanzi.includes(q) || w.pinyin.toLowerCase().includes(q)
+      );
+      if (found) {
+        state.selected = found;
+      }
+    }
+    renderDictionary();
+    renderGraph(state.selected);
+  });
+
+  document.querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      state.hskLevel = p.dataset.level;
+      filterWords();
+      renderDictionary();
+      renderGraph(state.selected);
+    });
+  });
+
+  document.querySelectorAll('.word-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const w = state.words.find(x => x.hanzi === row.dataset.hanzi);
+      if (w) {
+        state.selected = w;
+        renderDictionary();
+        renderGraph(w);
+      }
+    });
+  });
+
+  // Vol button
+  const vb = document.getElementById('vol-btn');
+  if (vb) vb.addEventListener('click', () => state.selected && speak(state.selected.hanzi));
+
+  // Render graph
+  setTimeout(() => renderGraph(state.selected), 50);
+}
+
+function renderDetailHTML() {
+  if (!state.selected) {
+    return `<div style="text-align:center;padding:3rem 1rem;color:var(--text2)">
+      <div style="font-size:5rem;opacity:0.08;font-family:'Noto Serif SC',serif">字</div>
+      <p style="margin-top:1rem;font-size:0.8rem">Soldan bir kelime seçin</p>
+    </div>`;
+  }
+  const w = state.selected;
+  // Find example sentences containing this character
+  const exSentences = EXAMPLE_SENTENCES.filter(s => s.cn.includes(w.hanzi)).slice(0, 3);
+
+  return `<div class="detail-panel fade-in">
+    <div class="char-box">
+      <div class="hanzi-lg">${w.hanzi}</div>
+    </div>
+
+    <button id="vol-btn" class="vol-btn" title="Seslendir">🔊</button>
+
+    <div style="text-align:center">
+      <div class="pinyin-big">${w.pinyin}</div>
+      <div class="meaning-txt" style="margin-top:0.5rem">
+        <span style="color:var(--accent)">${w.tr||''}</span>
+        ${w.tr && w.en ? '<span style="color:var(--border)"> · </span>' : ''}
+        <span style="color:var(--text2)">${w.en||''}</span>
+      </div>
+      <div style="margin-top:0.5rem"><span class="tag">HSK ${w.hsk}</span></div>
+    </div>
+
+    ${w.compounds && w.compounds.length > 0 ? `
+    <div style="width:100%">
+      <div class="muted" style="margin-bottom:0.5rem;font-size:0.65rem;letter-spacing:2px">BİLEŞİKLER</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+        ${w.compounds.map(c => {
+          const cw = state.allWords.find(x => x.hanzi === c);
+          return `<button class="btn btn-sm compound-btn" data-hanzi="${c}" title="${cw ? cw.tr||cw.en : ''}">${c}</button>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+
+    ${exSentences.length > 0 ? `
+    <div style="width:100%">
+      <div class="muted" style="margin-bottom:0.5rem;font-size:0.65rem;letter-spacing:2px">ÖRNEK CÜMLELER</div>
+      ${exSentences.map(s => `
+        <div class="sentence-card" style="margin-bottom:0.5rem">
+          <div class="sentence-cn">${s.cn} <button class="vol-btn" style="width:24px;height:24px;font-size:0.75rem;display:inline-flex" onclick="speak('${s.cn.replace(/'/g,"\\'")}')">🔊</button></div>
+          <div class="sentence-py">${s.py}</div>
+          <div class="sentence-tr">${s.tr}</div>
+        </div>`).join('')}
+    </div>` : `
+    <div style="width:100%">
+      <div class="muted" style="margin-bottom:0.5rem;font-size:0.65rem;letter-spacing:2px">MDBG SÖZLÜK</div>
+      <a href="https://www.mdbg.net/chinese/dictionary?page=worddict&wdrst=0&wdqt=${encodeURIComponent(w.hanzi)}" 
+         target="_blank" class="btn" style="width:100%;text-align:center;display:block">
+        🔗 Detaylı bak (mdbg.net)
+      </a>
+    </div>`}
+  </div>`;
+}
+
+function renderDetail() {
+  const panel = document.getElementById('detail-panel');
+  if (panel) {
+    panel.innerHTML = renderDetailHTML();
+    const vb = document.getElementById('vol-btn');
+    if (vb) vb.addEventListener('click', () => state.selected && speak(state.selected.hanzi));
+  }
+  // compound btn navigation
+  document.querySelectorAll('.compound-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const w = state.allWords.find(x => x.hanzi === b.dataset.hanzi);
+      if (w) { state.selected = w; renderGraph(w); renderDetail(); updateWordList(); }
+    });
+  });
+}
+
+function updateWordList() {
+  document.querySelectorAll('.word-row').forEach(r => {
+    r.classList.toggle('selected', r.dataset.hanzi === state.selected?.hanzi);
+  });
+}
+
+// ── FLASHCARDS ──────────────────────────────────
+function renderFlashcards() {
+  const main = document.getElementById('main');
+  const cards = state.words.length > 0 ? state.words : STARTER_WORDS;
+  if (state.flashIdx >= cards.length) state.flashIdx = 0;
+  const c = cards[state.flashIdx];
+
+  main.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2rem 0">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div class="level-pills">
+          ${['all','1-2','3-4','5-6'].map(l => `
+            <button class="pill ${state.hskLevel===l?'active':''}" data-level="${l}">
+              ${l==='all'?'Tümü':'HSK '+l}
+            </button>`).join('')}
+        </div>
+        <span class="muted">${state.flashIdx+1}/${cards.length}</span>
+      </div>
+
+      <div class="flashcard-scene" id="fc-scene">
+        <div class="flashcard-inner ${state.flashFlipped?'flipped':''}">
+          <div class="flashcard-face card-front">
+            <div class="hanzi-lg" style="color:var(--accent)">${c.hanzi}</div>
+            <button class="vol-btn" id="fc-vol">🔊</button>
+            <div class="muted" style="font-size:0.65rem;margin-top:0.5rem">Tıkla → çevir</div>
+          </div>
+          <div class="flashcard-face card-back">
+            <div style="text-align:center">
+              <div style="font-size:1.6rem;color:var(--accent);font-family:'Space Mono',monospace;margin-bottom:0.5rem">${c.pinyin}</div>
+              <div style="font-size:1rem;color:var(--text);margin-bottom:0.3rem">${c.tr||''}</div>
+              <div style="font-size:0.8rem;color:var(--text2)">${c.en||''}</div>
+            </div>
+            ${c.compounds && c.compounds.length>0 ? `
+              <div style="font-size:0.65rem;color:var(--text2);text-align:center">
+                ${c.compounds.slice(0,4).join('  ')}
+              </div>` : ''}
+            <div class="tag">HSK ${c.hsk}</div>
+            <button class="vol-btn" id="fc-vol2">🔊</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem">
+        <button class="btn" id="fc-prev">← Önceki</button>
+        <button class="btn btn-accent" id="fc-next">Sonraki →</button>
+      </div>
+    </div>`;
+
+  document.getElementById('fc-scene').addEventListener('click', () => {
+    state.flashFlipped = !state.flashFlipped;
+    renderFlashcards();
+  });
+  document.getElementById('fc-prev').addEventListener('click', e => {
+    e.stopPropagation();
+    state.flashIdx = (state.flashIdx - 1 + cards.length) % cards.length;
+    state.flashFlipped = false;
+    renderFlashcards();
+  });
+  document.getElementById('fc-next').addEventListener('click', e => {
+    e.stopPropagation();
+    state.flashIdx = (state.flashIdx + 1) % cards.length;
+    state.flashFlipped = false;
+    renderFlashcards();
+  });
+  ['fc-vol','fc-vol2'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.addEventListener('click', e => { e.stopPropagation(); speak(c.hanzi); });
+  });
+  document.querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      state.hskLevel = p.dataset.level;
+      state.flashIdx = 0; state.flashFlipped = false;
+      filterWords(); renderFlashcards();
+    });
+  });
+}
+
+// ── SENTENCES ───────────────────────────────────
+function renderSentences() {
+  const main = document.getElementById('main');
+  const sents = EXAMPLE_SENTENCES;
+  if (state.sentIdx >= sents.length) state.sentIdx = 0;
+
+  if (state.sentAvail.length === 0 && state.sentUserBlocks.length === 0) {
+    // init
+    const blocks = [...sents[state.sentIdx].blocks];
+    for (let i = blocks.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [blocks[i],blocks[j]] = [blocks[j],blocks[i]];
+    }
+    state.sentAvail = blocks;
+    state.sentStatus = 'idle';
+  }
+
+  const s = sents[state.sentIdx];
+
+  main.innerHTML = `
+    <div style="max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem">
+      <div class="card">
+        <div style="text-align:center;margin-bottom:1.5rem">
+          <div class="muted" style="font-size:0.65rem;letter-spacing:3px;margin-bottom:0.5rem">TÜRKÇEDEN ÇİNCEYE</div>
+          <div style="font-size:1.4rem;color:var(--text)">${s.tr}</div>
+          <div style="font-size:0.7rem;color:var(--text2);margin-top:0.3rem">${state.sentIdx+1}/${sents.length}</div>
+        </div>
+
+        <!-- Drop zone -->
+        <div class="blocks-area ${state.sentStatus}" id="drop-zone">
+          ${state.sentUserBlocks.length===0 ? `<span class="muted">Kelimeleri sıraya diz...</span>` : ''}
+          ${state.sentUserBlocks.map((b,i) => `
+            <button class="block-btn placed" data-idx="${i}" data-src="user">${b}</button>`).join('')}
+        </div>
+
+        <!-- Available blocks -->
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin:1rem 0">
+          ${state.sentAvail.map((b,i) => `
+            <button class="block-btn" data-idx="${i}" data-src="avail">${b}</button>`).join('')}
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:0.75rem;justify-content:center">
+          ${state.sentStatus==='correct'
+            ? `<button class="btn" id="sent-listen">🔊 Dinle</button>
+               <button class="btn btn-accent" id="sent-next">Sonraki →</button>`
+            : `<button class="btn" id="sent-check">✓ Kontrol</button>
+               <button class="btn btn-sm" id="sent-reset">↺ Sıfırla</button>`
+          }
+        </div>
+
+        ${state.sentStatus==='correct' ? `
+          <div style="text-align:center;margin-top:1rem;color:var(--green)">✓ Doğru!</div>
+          <div style="text-align:center;font-size:0.75rem;color:var(--accent);margin-top:0.3rem">${s.py}</div>
+        ` : state.sentStatus==='wrong' ? `
+          <div style="text-align:center;margin-top:1rem;color:var(--red)">✗ Yanlış, tekrar dene</div>
+        ` : ''}
+      </div>
+
+      <!-- All sentences reference -->
+      <div class="card" style="padding:1rem">
+        <div class="muted" style="font-size:0.65rem;letter-spacing:2px;margin-bottom:0.75rem">TÜM CÜMLELER</div>
+        ${sents.map((sen, i) => `
+          <div style="display:flex;align-items:center;gap:0.75rem;padding:0.4rem 0;border-bottom:1px solid var(--border);cursor:pointer" data-sent="${i}" class="sent-row">
+            <span style="color:var(--text2);font-size:0.65rem;min-width:1.5rem">${i+1}</span>
+            <span style="font-family:'Noto Serif SC',serif;color:var(--text)">${sen.cn}</span>
+            <span style="color:var(--text2);font-size:0.7rem;flex:1">${sen.tr}</span>
+            <button class="vol-btn" style="width:24px;height:24px;font-size:0.7rem" data-cn="${sen.cn}">🔊</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  // Events
+  document.querySelectorAll('[data-src]').forEach(b => {
+    b.addEventListener('click', () => {
+      const i = +b.dataset.idx;
+      const src = b.dataset.src;
+      if (src === 'avail') {
+        const block = state.sentAvail.splice(i, 1)[0];
+        state.sentUserBlocks.push(block);
+      } else {
+        const block = state.sentUserBlocks.splice(i, 1)[0];
+        state.sentAvail.push(block);
+      }
+      state.sentStatus = 'idle';
+      renderSentences();
+    });
+  });
+
+  document.getElementById('sent-check')?.addEventListener('click', () => {
+    const correct = s.blocks.join('') === state.sentUserBlocks.join('');
+    state.sentStatus = correct ? 'correct' : 'wrong';
+    if (correct) speak(s.cn);
+    renderSentences();
+  });
+
+  document.getElementById('sent-reset')?.addEventListener('click', () => {
+    state.sentAvail = []; state.sentUserBlocks = [];
+    renderSentences();
+  });
+
+  document.getElementById('sent-listen')?.addEventListener('click', () => speak(s.cn));
+
+  document.getElementById('sent-next')?.addEventListener('click', () => {
+    state.sentIdx = (state.sentIdx + 1) % sents.length;
+    state.sentAvail = []; state.sentUserBlocks = [];
+    renderSentences();
+  });
+
+  document.querySelectorAll('.sent-row').forEach(r => {
+    r.addEventListener('click', e => {
+      if (e.target.dataset.cn) return;
+      state.sentIdx = +r.dataset.sent;
+      state.sentAvail = []; state.sentUserBlocks = [];
+      renderSentences();
+    });
+  });
+
+  document.querySelectorAll('[data-cn]').forEach(b => {
+    b.addEventListener('click', e => { e.stopPropagation(); speak(b.dataset.cn); });
+  });
+}
+
+// ── QUIZ ────────────────────────────────────────
+function initQuiz() {
+  const pool = state.words.length >= 4 ? state.words : STARTER_WORDS;
+  const correct = pool[state.quizIdx % pool.length];
+  const wrong = pool.filter(w => w.hanzi !== correct.hanzi)
+    .sort(() => 0.5 - Math.random()).slice(0, 3);
+  state.quizOptions = [correct, ...wrong].sort(() => 0.5 - Math.random());
+  state.quizAnswered = false;
+  state.quizSelected = null;
+}
+
+function renderQuiz() {
+  const main = document.getElementById('main');
+  const pool = state.words.length >= 4 ? state.words : STARTER_WORDS;
+  if (state.quizOptions.length === 0) initQuiz();
+  const correct = pool[state.quizIdx % pool.length];
+
+  main.innerHTML = `
+    <div style="max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div class="level-pills">
+          ${['all','1-2','3-4','5-6'].map(l => `
+            <button class="pill ${state.hskLevel===l?'active':''}" data-level="${l}">
+              ${l==='all'?'Tümü':'HSK '+l}
+            </button>`).join('')}
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="score-bar">
+        ${state.quizScore.slice(-10).map(h => `<div class="score-dot ${h?'hit':'miss'}"></div>`).join('')}
+        ${state.quizScore.length > 0 ? `<span class="muted" style="margin-left:0.5rem">${state.quizScore.filter(Boolean).length}/${state.quizScore.length}</span>` : ''}
+      </div>
+
+      <div class="card" style="text-align:center">
+        <div class="muted" style="font-size:0.65rem;letter-spacing:3px;margin-bottom:1rem">HANGİ KARAKTER?</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1.5rem">
+          <div style="font-size:1.8rem;color:var(--accent);font-family:'Space Mono',monospace">${correct.pinyin}</div>
+          <button class="vol-btn" id="qz-vol">🔊</button>
+        </div>
+        <div style="color:var(--text2);font-size:0.85rem;margin-bottom:1.5rem">${correct.tr || correct.en}</div>
+
+        <div class="quiz-options">
+          ${state.quizOptions.map((opt,i) => {
+            let cls = '';
+            if (state.quizAnswered) {
+              if (opt.hanzi === correct.hanzi) cls = 'correct';
+              else if (opt.hanzi === state.quizSelected?.hanzi) cls = 'wrong';
+            }
+            return `<button class="quiz-opt ${cls}" data-idx="${i}" ${state.quizAnswered?'disabled':''}>${opt.hanzi}</button>`;
+          }).join('')}
+        </div>
+
+        ${state.quizAnswered ? `
+          <div style="margin-top:1.25rem">
+            <div style="color:${state.quizSelected?.hanzi===correct.hanzi?'var(--green)':'var(--red)'};margin-bottom:0.75rem">
+              ${state.quizSelected?.hanzi===correct.hanzi ? '✓ Doğru!' : `✗ Yanlış — Doğrusu: ${correct.hanzi}`}
+            </div>
+            <button class="btn btn-accent" id="qz-next">Sonraki →</button>
+          </div>` : ''}
+      </div>
+    </div>`;
+
+  document.getElementById('qz-vol')?.addEventListener('click', () => speak(correct.hanzi));
+
+  document.querySelectorAll('.quiz-opt').forEach(b => {
+    b.addEventListener('click', () => {
+      if (state.quizAnswered) return;
+      const opt = state.quizOptions[+b.dataset.idx];
+      state.quizSelected = opt;
+      state.quizAnswered = true;
+      const hit = opt.hanzi === correct.hanzi;
+      state.quizScore.push(hit);
+      if (hit) speak(correct.hanzi);
+      renderQuiz();
+    });
+  });
+
+  document.getElementById('qz-next')?.addEventListener('click', () => {
+    state.quizIdx++;
+    state.quizOptions = [];
+    initQuiz();
+    renderQuiz();
+  });
+
+  document.querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      state.hskLevel = p.dataset.level;
+      state.quizIdx = 0; state.quizScore = []; state.quizOptions = [];
+      filterWords(); initQuiz(); renderQuiz();
+    });
+  });
+}
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+document.querySelectorAll('#nav button').forEach(b => {
+  b.addEventListener('click', () => {
+    state.tab = b.dataset.tab;
+    render();
+  });
+});
+
+// ════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  // pre-load voices
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => {};
+  }
+  loadData();
+});
+</script>
 </body>
 </html>
