@@ -14,22 +14,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.min.js"></script>
   <style>
     :root {
-      --bg: #0d0d0f;
-      --surface: #18181c;
-      --surface2: #222228;
-      --border: #2e2e38;
-      --accent: #e8b84b;
-      --text: #f0ede6;
-      --text2: #9a9890;
-      --red: #d94f3d;
-      --green: #4caf7d;
-      --blue: #5b9bd5;
+      --bg: #09090b;
+      --surface: #121216;
+      --surface2: #1e1e24;
+      --border: #2d2d36;
+      --accent: #facc15;
+      --text: #fafafa;
+      --text2: #a1a1aa;
+      --red: #ef4444;
+      --green: #10b981;
+      --blue: #3b82f6;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s;
     }
 
     body {
@@ -827,20 +828,25 @@
       color: var(--text2);
       flex: 1;
     }
-  
+
     .stroke-box {
-      width: 155px; height: 155px;
+      width: 155px;
+      height: 155px;
       border: 2px solid var(--border);
       background: var(--surface);
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: crosshair;
       margin-top: 0.5rem;
       border-radius: 8px;
     }
+
     .pill[data-unit] {
       border-color: rgba(232, 184, 75, 0.4);
       color: var(--accent);
     }
+
     .pill[data-unit].active {
       background: var(--accent);
       color: #000;
@@ -853,16 +859,8 @@
 <body style="display:flex;flex-direction:column;min-height:100vh">
 
   <!-- TTS Status Bar -->
-  <!-- TTS Status Bar Removed --><div id="tts-bar" style="display:none"></div>
-    <span id="tts-label">TTS kontrol ediliyor...</span>
-    <span style="margin-left:0.5rem;margin-right:0.25rem;opacity:0.4">|</span>
-    <span style="opacity:0.5;font-size:0.55rem">SERVER:</span>
-    <input id="tts-server-input" type="text" placeholder="https://chinese-study-tts.onrender.com" />
-    <button class="bar-btn" id="tts-connect-btn">Bağlan</button>
-    <button class="bar-btn" id="tts-test-btn" style="display:none">▶ Test</button>
-    <select id="tts-voice-select" style="display:none"></select>
-    <button class="bar-btn" id="tts-slow-btn" style="display:none">🐢 Yavaş</button>
-  </div>
+  <!-- TTS Status Bar Removed -->
+  <div id="tts-bar" style="display:none"></div>
 
   <header>
     <div class="logo">汉语学习<span>ÇİNCE ÖĞREN</span></div>
@@ -900,24 +898,24 @@
     //  TTS ENGINE
     // ══════════════════════════════════════════════════════════════
     const TTS = (() => {
-  function wsSpeak(text, btn) {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-CN'; u.rate = 0.85;
-    const v = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('zh'));
-    if (v) u.voice = v;
-    if (btn) btn.classList.add('playing');
-    u.onend = u.onerror = () => { if (btn) btn.classList.remove('playing'); };
-    window.speechSynthesis.speak(u);
-  }
-  return {
-    init: async () => {},
-    speak: (text, btn = null) => {
-      wsSpeak(text, btn);
-    }
-  };
-})();
+      function wsSpeak(text, btn) {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'zh-CN'; u.rate = 0.85;
+        const v = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('zh'));
+        if (v) u.voice = v;
+        if (btn) btn.classList.add('playing');
+        u.onend = u.onerror = () => { if (btn) btn.classList.remove('playing'); };
+        window.speechSynthesis.speak(u);
+      }
+      return {
+        init: async () => { },
+        speak: (text, btn = null) => {
+          wsSpeak(text, btn);
+        }
+      };
+    })();
 
     // Tekrarçalınma takibi: aynı metin 4 saniye içinde tekrar çalınırsa yavaş mod
     let _lastSpokenText = '', _lastSpokenAt = 0;
@@ -946,1870 +944,1870 @@
     //  DATA (Kullanıcı İlişkisel Sözlüğü)
     // ══════════════════════════════════════════════════════════════
     const WORDS = [
-  {
-    "hanzi": "好",
-    "pinyin": "hǎo",
-    "en": "good",
-    "tr": "iyi",
-    "hsk": 1,
-    "compounds": [
-      "你好",
-      "很好",
-      "好吃",
-      "好看"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "你",
-    "pinyin": "nǐ",
-    "en": "you",
-    "tr": "sen",
-    "hsk": 1,
-    "compounds": [
-      "你好",
-      "你们"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "我",
-    "pinyin": "wǒ",
-    "en": "I / me",
-    "tr": "ben",
-    "hsk": 1,
-    "compounds": [
-      "我们",
-      "我的"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "叫",
-    "pinyin": "jiào",
-    "en": "to call",
-    "tr": "adlandırmak / çağırmak",
-    "hsk": 1,
-    "compounds": [
-      "叫门"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "是",
-    "pinyin": "shì",
-    "en": "to be",
-    "tr": "olmak (-dır)",
-    "hsk": 1,
-    "compounds": [
-      "是不是",
-      "但是"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "人",
-    "pinyin": "rén",
-    "en": "person",
-    "tr": "insan / kişi",
-    "hsk": 1,
-    "compounds": [
-      "中国人",
-      "外国人",
-      "男人",
-      "女人"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "中国",
-    "pinyin": "Zhōngguó",
-    "en": "China",
-    "tr": "Çin",
-    "hsk": 1,
-    "compounds": [
-      "中",
-      "国"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "中",
-    "pinyin": "zhōng",
-    "en": "middle",
-    "tr": "orta",
-    "hsk": 1,
-    "compounds": [
-      "中国",
-      "中午",
-      "中间",
-      "中文"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "国",
-    "pinyin": "guó",
-    "en": "country",
-    "tr": "ülke",
-    "hsk": 1,
-    "compounds": [
-      "中国",
-      "外国",
-      "国家"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "老师",
-    "pinyin": "lǎoshī",
-    "en": "teacher",
-    "tr": "öğretmen",
-    "hsk": 1,
-    "compounds": [
-      "老",
-      "师"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "学生",
-    "pinyin": "xuésheng",
-    "en": "student",
-    "tr": "öğrenci",
-    "hsk": 1,
-    "compounds": [
-      "学",
-      "生"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "学",
-    "pinyin": "xué",
-    "en": "study",
-    "tr": "öğrenmek",
-    "hsk": 1,
-    "compounds": [
-      "学生",
-      "学习",
-      "学校",
-      "大学"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "生",
-    "pinyin": "shēng",
-    "en": "born / life",
-    "tr": "doğmak / hayat",
-    "hsk": 1,
-    "compounds": [
-      "学生",
-      "生日",
-      "医生",
-      "生活",
-      "女生",
-      "男生"
-    ],
-    "unit": 1
-  },
-  {
-    "hanzi": "这",
-    "pinyin": "zhè",
-    "en": "this",
-    "tr": "bu",
-    "hsk": 1,
-    "compounds": [
-      "这个",
-      "这里"
-    ],
-    "unit": 2
-  },
-  {
-    "hanzi": "的",
-    "pinyin": "de",
-    "en": "possessive particle",
-    "tr": "iyelik eki (-ın)",
-    "hsk": 1,
-    "compounds": [
-      "我的",
-      "你的",
-      "好的"
-    ],
-    "unit": 2
-  },
-  {
-    "hanzi": "书",
-    "pinyin": "shū",
-    "en": "book",
-    "tr": "kitap",
-    "hsk": 1,
-    "compounds": [
-      "书店",
-      "书架",
-      "看书",
-      "图书馆"
-    ],
-    "unit": 2
-  },
-  {
-    "hanzi": "有",
-    "pinyin": "yǒu",
-    "en": "to have",
-    "tr": "sahip olmak / var",
-    "hsk": 1,
-    "compounds": [
-      "没有",
-      "有名"
-    ],
-    "unit": 2
-  },
-  {
-    "hanzi": "没",
-    "pinyin": "méi",
-    "en": "not",
-    "tr": "yok",
-    "hsk": 1,
-    "compounds": [
-      "没有",
-      "没关系"
-    ],
-    "unit": 2
-  },
-  {
-    "hanzi": "没有",
-    "pinyin": "méiyǒu",
-    "en": "not have",
-    "tr": "sahip olmamak",
-    "hsk": 1,
-    "compounds": [
-      "没",
-      "有"
-    ],
-    "unit": 2
-  },
-  {
-    "hanzi": "本",
-    "pinyin": "běn",
-    "en": "measure word for books",
-    "tr": "kitap için miktar kelimesi",
-    "hsk": 1,
-    "compounds": [
-      "日本",
-      "本子",
-      "书本"
-    ],
-    "unit": 2
-  },
-  {
-    "hanzi": "什么",
-    "pinyin": "shénme",
-    "en": "what",
-    "tr": "ne",
-    "hsk": 1,
-    "compounds": [
-      "什么时候",
-      "为什么"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "家",
-    "pinyin": "jiā",
-    "en": "home / family",
-    "tr": "ev / aile",
-    "hsk": 1,
-    "compounds": [
-      "全家",
-      "大家",
-      "回家"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "谁",
-    "pinyin": "shéi",
-    "en": "who",
-    "tr": "kim",
-    "hsk": 1,
-    "compounds": [],
-    "unit": 3
-  },
-  {
-    "hanzi": "爸爸",
-    "pinyin": "bàba",
-    "en": "dad",
-    "tr": "baba",
-    "hsk": 1,
-    "compounds": [
-      "爸"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "妈妈",
-    "pinyin": "māma",
-    "en": "mom",
-    "tr": "anne",
-    "hsk": 1,
-    "compounds": [
-      "妈"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "哥哥",
-    "pinyin": "gēge",
-    "en": "older brother",
-    "tr": "abi",
-    "hsk": 1,
-    "compounds": [
-      "哥"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "弟弟",
-    "pinyin": "dìdi",
-    "en": "younger brother",
-    "tr": "erkek kardeş",
-    "hsk": 1,
-    "compounds": [
-      "弟"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "姐姐",
-    "pinyin": "jiějie",
-    "en": "older sister",
-    "tr": "abla",
-    "hsk": 1,
-    "compounds": [
-      "姐"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "妹妹",
-    "pinyin": "mèimei",
-    "en": "younger sister",
-    "tr": "kız kardeş",
-    "hsk": 1,
-    "compounds": [
-      "妹"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "工作",
-    "pinyin": "gōngzuò",
-    "en": "work",
-    "tr": "çalışmak / iş",
-    "hsk": 1,
-    "compounds": [
-      "工人"
-    ],
-    "unit": 3
-  },
-  {
-    "hanzi": "学习",
-    "pinyin": "xuéxí",
-    "en": "to study",
-    "tr": "çalışmak",
-    "hsk": 1,
-    "compounds": [
-      "学",
-      "习"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "汉语",
-    "pinyin": "Hànyǔ",
-    "en": "Chinese language",
-    "tr": "Çince",
-    "hsk": 1,
-    "compounds": [
-      "汉",
-      "语"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "语",
-    "pinyin": "yǔ",
-    "en": "language",
-    "tr": "dil",
-    "hsk": 1,
-    "compounds": [
-      "汉语",
-      "英语",
-      "语言"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "朋友",
-    "pinyin": "péngyou",
-    "en": "friend",
-    "tr": "arkadaş",
-    "hsk": 1,
-    "compounds": [
-      "好朋友"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "名字",
-    "pinyin": "míngzi",
-    "en": "name",
-    "tr": "isim",
-    "hsk": 1,
-    "compounds": [
-      "名",
-      "字"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "哪",
-    "pinyin": "nǎ",
-    "en": "which",
-    "tr": "hangi",
-    "hsk": 1,
-    "compounds": [
-      "哪儿",
-      "哪个"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "外国",
-    "pinyin": "wàiguó",
-    "en": "foreign country",
-    "tr": "yabancı ülke",
-    "hsk": 1,
-    "compounds": [
-      "外",
-      "国"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "外",
-    "pinyin": "wài",
-    "en": "outside",
-    "tr": "dış",
-    "hsk": 1,
-    "compounds": [
-      "外边",
-      "外国",
-      "外面"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "都",
-    "pinyin": "dōu",
-    "en": "all",
-    "tr": "hepsi",
-    "hsk": 1,
-    "compounds": [
-      "都是"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "请",
-    "pinyin": "qǐng",
-    "en": "please",
-    "tr": "lütfen",
-    "hsk": 1,
-    "compounds": [
-      "请问",
-      "请进",
-      "请客"
-    ],
-    "unit": 4
-  },
-  {
-    "hanzi": "天",
-    "pinyin": "tiān",
-    "en": "day / sky",
-    "tr": "gün",
-    "hsk": 1,
-    "compounds": [
-      "今天",
-      "明天",
-      "昨天",
-      "星期天",
-      "天气"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "今天",
-    "pinyin": "jīntiān",
-    "en": "today",
-    "tr": "bugün",
-    "hsk": 1,
-    "compounds": [
-      "今",
-      "天"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "明天",
-    "pinyin": "míngtiān",
-    "en": "tomorrow",
-    "tr": "yarın",
-    "hsk": 1,
-    "compounds": [
-      "明",
-      "天"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "昨天",
-    "pinyin": "zuótiān",
-    "en": "yesterday",
-    "tr": "dün",
-    "hsk": 1,
-    "compounds": [
-      "昨",
-      "天"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "生日",
-    "pinyin": "shēngrì",
-    "en": "birthday",
-    "tr": "doğum günü",
-    "hsk": 1,
-    "compounds": [
-      "生",
-      "日"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "日",
-    "pinyin": "rì",
-    "en": "day / sun",
-    "tr": "gün / güneş",
-    "hsk": 1,
-    "compounds": [
-      "生日",
-      "日本",
-      "日记"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "快乐",
-    "pinyin": "kuàilè",
-    "en": "happy",
-    "tr": "mutlu",
-    "hsk": 1,
-    "compounds": [
-      "快",
-      "乐"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "谢谢",
-    "pinyin": "xièxie",
-    "en": "thanks",
-    "tr": "teşekkürler",
-    "hsk": 1,
-    "compounds": [
-      "不用谢"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "月",
-    "pinyin": "yuè",
-    "en": "month",
-    "tr": "ay",
-    "hsk": 1,
-    "compounds": [
-      "一月",
-      "二月",
-      "几个月"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "星期",
-    "pinyin": "xīngqī",
-    "en": "week",
-    "tr": "hafta",
-    "hsk": 1,
-    "compounds": [
-      "星",
-      "期",
-      "星期天"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "很",
-    "pinyin": "hěn",
-    "en": "very",
-    "tr": "çok",
-    "hsk": 1,
-    "compounds": [
-      "很好",
-      "很高兴",
-      "很大"
-    ],
-    "unit": 5
-  },
-  {
-    "hanzi": "现在",
-    "pinyin": "xiànzài",
-    "en": "now",
-    "tr": "şimdi",
-    "hsk": 1,
-    "compounds": [
-      "现",
-      "在"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "点",
-    "pinyin": "diǎn",
-    "en": "o'clock",
-    "tr": "saat (vakit)",
-    "hsk": 1,
-    "compounds": [
-      "几点",
-      "一点儿"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "分",
-    "pinyin": "fēn",
-    "en": "minute",
-    "tr": "dakika",
-    "hsk": 1,
-    "compounds": [
-      "分钟"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "早上",
-    "pinyin": "zǎoshang",
-    "en": "morning",
-    "tr": "sabah",
-    "hsk": 1,
-    "compounds": [
-      "早",
-      "上"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "晚上",
-    "pinyin": "wǎnshang",
-    "en": "evening",
-    "tr": "akşam",
-    "hsk": 1,
-    "compounds": [
-      "晚",
-      "上"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "上午",
-    "pinyin": "shàngwǔ",
-    "en": "morning",
-    "tr": "öğleden önce",
-    "hsk": 1,
-    "compounds": [
-      "上",
-      "午"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "下午",
-    "pinyin": "xiàwǔ",
-    "en": "afternoon",
-    "tr": "öğleden sonra",
-    "hsk": 1,
-    "compounds": [
-      "下",
-      "午"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "中午",
-    "pinyin": "zhōngwǔ",
-    "en": "noon",
-    "tr": "öğle",
-    "hsk": 1,
-    "compounds": [
-      "中",
-      "午"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "上",
-    "pinyin": "shàng",
-    "en": "up / above",
-    "tr": "yukarı",
-    "hsk": 1,
-    "compounds": [
-      "上午",
-      "上边",
-      "上课",
-      "上班"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "下",
-    "pinyin": "xià",
-    "en": "down / below",
-    "tr": "aşağı",
-    "hsk": 1,
-    "compounds": [
-      "下午",
-      "下边",
-      "下课",
-      "下雨"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "午",
-    "pinyin": "wǔ",
-    "en": "noon",
-    "tr": "öğle",
-    "hsk": 1,
-    "compounds": [
-      "上午",
-      "中午",
-      "下午"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "课",
-    "pinyin": "kè",
-    "en": "class / lesson",
-    "tr": "ders",
-    "hsk": 1,
-    "compounds": [
-      "上课",
-      "下课"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "半",
-    "pinyin": "bàn",
-    "en": "half",
-    "tr": "buçuk / yarım",
-    "hsk": 1,
-    "compounds": [
-      "一半",
-      "半个"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "睡觉",
-    "pinyin": "shuìjiào",
-    "en": "sleep",
-    "tr": "uyumak",
-    "hsk": 1,
-    "compounds": [
-      "睡",
-      "觉"
-    ],
-    "unit": 6
-  },
-  {
-    "hanzi": "银行",
-    "pinyin": "yínháng",
-    "en": "bank",
-    "tr": "banka",
-    "hsk": 2,
-    "compounds": [
-      "银",
-      "行"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "在",
-    "pinyin": "zài",
-    "en": "at / in",
-    "tr": "bulunmak",
-    "hsk": 1,
-    "compounds": [
-      "现在",
-      "在家"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "哪儿",
-    "pinyin": "nǎr",
-    "en": "where",
-    "tr": "nerede",
-    "hsk": 1,
-    "compounds": [
-      "哪"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "边",
-    "pinyin": "bian",
-    "en": "side",
-    "tr": "kenar / taraf",
-    "hsk": 1,
-    "compounds": [
-      "东边",
-      "西边",
-      "南边",
-      "北边",
-      "前边",
-      "后边",
-      "上边",
-      "下边",
-      "旁边"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "东",
-    "pinyin": "dōng",
-    "en": "east",
-    "tr": "doğu",
-    "hsk": 1,
-    "compounds": [
-      "东边",
-      "东西"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "西",
-    "pinyin": "xī",
-    "en": "west",
-    "tr": "batı",
-    "hsk": 1,
-    "compounds": [
-      "西边",
-      "东西"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "南",
-    "pinyin": "nán",
-    "en": "south",
-    "tr": "güney",
-    "hsk": 1,
-    "compounds": [
-      "南边"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "北",
-    "pinyin": "běi",
-    "en": "north",
-    "tr": "kuzey",
-    "hsk": 1,
-    "compounds": [
-      "北边",
-      "北京"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "前",
-    "pinyin": "qián",
-    "en": "front",
-    "tr": "ön",
-    "hsk": 1,
-    "compounds": [
-      "前边",
-      "以前"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "后",
-    "pinyin": "hòu",
-    "en": "back",
-    "tr": "arka",
-    "hsk": 1,
-    "compounds": [
-      "后边",
-      "以后"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "地方",
-    "pinyin": "dìfang",
-    "en": "place",
-    "tr": "yer",
-    "hsk": 1,
-    "compounds": [
-      "地",
-      "方"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "学校",
-    "pinyin": "xuéxiào",
-    "en": "school",
-    "tr": "okul",
-    "hsk": 1,
-    "compounds": [
-      "学",
-      "校"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "房间",
-    "pinyin": "fángjiān",
-    "en": "room",
-    "tr": "oda",
-    "hsk": 2,
-    "compounds": [
-      "房",
-      "间"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "间",
-    "pinyin": "jiān",
-    "en": "room / between",
-    "tr": "oda / arası",
-    "hsk": 1,
-    "compounds": [
-      "房间",
-      "中间",
-      "时间"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "里",
-    "pinyin": "lǐ",
-    "en": "inside",
-    "tr": "içinde",
-    "hsk": 1,
-    "compounds": [
-      "里边",
-      "家里"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "桌子",
-    "pinyin": "zhuōzi",
-    "en": "desk / table",
-    "tr": "masa",
-    "hsk": 1,
-    "compounds": [
-      "桌"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "旁边",
-    "pinyin": "pángbiān",
-    "en": "beside",
-    "tr": "yan taraf",
-    "hsk": 1,
-    "compounds": [
-      "旁",
-      "边"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "中间",
-    "pinyin": "zhōngjiān",
-    "en": "middle",
-    "tr": "orta",
-    "hsk": 1,
-    "compounds": [
-      "中",
-      "间"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "或者",
-    "pinyin": "huòzhě",
-    "en": "or",
-    "tr": "veya / ya da",
-    "hsk": 2,
-    "compounds": [
-      "或",
-      "者"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "图书馆",
-    "pinyin": "túshūguǎn",
-    "en": "library",
-    "tr": "kütüphane",
-    "hsk": 2,
-    "compounds": [
-      "图",
-      "书",
-      "馆"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "写",
-    "pinyin": "xiě",
-    "en": "to write",
-    "tr": "yazmak",
-    "hsk": 1,
-    "compounds": [
-      "写信",
-      "写字"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "信",
-    "pinyin": "xìn",
-    "en": "letter",
-    "tr": "mektup",
-    "hsk": 1,
-    "compounds": [
-      "写信"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "同屋",
-    "pinyin": "tóngwū",
-    "en": "roommate",
-    "tr": "oda arkadaşı",
-    "hsk": 2,
-    "compounds": [
-      "同",
-      "屋",
-      "同学"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "常常",
-    "pinyin": "chángcháng",
-    "en": "often",
-    "tr": "sık sık",
-    "hsk": 2,
-    "compounds": [
-      "常"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "电视",
-    "pinyin": "diànshì",
-    "en": "television",
-    "tr": "televizyon",
-    "hsk": 1,
-    "compounds": [
-      "电",
-      "视",
-      "看电视"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "聊天儿",
-    "pinyin": "liáotiānr",
-    "en": "to chat",
-    "tr": "sohbet etmek",
-    "hsk": 2,
-    "compounds": [
-      "聊",
-      "天"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "食堂",
-    "pinyin": "shítáng",
-    "en": "dining hall",
-    "tr": "yemekhane",
-    "hsk": 2,
-    "compounds": [
-      "食",
-      "堂"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "去",
-    "pinyin": "qù",
-    "en": "to go",
-    "tr": "gitmek",
-    "hsk": 1,
-    "compounds": [
-      "去年",
-      "进去"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "来",
-    "pinyin": "lái",
-    "en": "to come",
-    "tr": "gelmek",
-    "hsk": 1,
-    "compounds": [
-      "回来",
-      "出来"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "买",
-    "pinyin": "mǎi",
-    "en": "to buy",
-    "tr": "satın almak",
-    "hsk": 1,
-    "compounds": [
-      "买东西"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "卖",
-    "pinyin": "mài",
-    "en": "to sell",
-    "tr": "satmak",
-    "hsk": 1,
-    "compounds": [
-      "买卖"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "东西",
-    "pinyin": "dōngxi",
-    "en": "thing",
-    "tr": "eşya / şey",
-    "hsk": 1,
-    "compounds": [
-      "东",
-      "西",
-      "买东西"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "苹果",
-    "pinyin": "píngguǒ",
-    "en": "apple",
-    "tr": "elma",
-    "hsk": 1,
-    "compounds": [
-      "果",
-      "水果"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "钱",
-    "pinyin": "qián",
-    "en": "money",
-    "tr": "para",
-    "hsk": 1,
-    "compounds": [
-      "多少钱",
-      "有钱"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "贵",
-    "pinyin": "guì",
-    "en": "expensive",
-    "tr": "pahalı",
-    "hsk": 2,
-    "compounds": [
-      "太贵了"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "便宜",
-    "pinyin": "piányi",
-    "en": "cheap",
-    "tr": "ucuz",
-    "hsk": 2,
-    "compounds": [
-      "便",
-      "宜"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "吃",
-    "pinyin": "chī",
-    "en": "to eat",
-    "tr": "yemek",
-    "hsk": 1,
-    "compounds": [
-      "吃饭",
-      "好吃"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "饭",
-    "pinyin": "fàn",
-    "en": "meal / rice",
-    "tr": "yemek / pilav",
-    "hsk": 1,
-    "compounds": [
-      "吃饭",
-      "米饭",
-      "早饭"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "喝",
-    "pinyin": "hē",
-    "en": "to drink",
-    "tr": "içmek",
-    "hsk": 1,
-    "compounds": [
-      "喝水",
-      "喝茶"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "水",
-    "pinyin": "shuǐ",
-    "en": "water",
-    "tr": "su",
-    "hsk": 1,
-    "compounds": [
-      "喝水",
-      "水果"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "茶",
-    "pinyin": "chá",
-    "en": "tea",
-    "tr": "çay",
-    "hsk": 1,
-    "compounds": [
-      "喝茶"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "喜欢",
-    "pinyin": "xǐhuan",
-    "en": "to like",
-    "tr": "hoşlanmak",
-    "hsk": 1,
-    "compounds": [
-      "喜",
-      "欢"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "看",
-    "pinyin": "kàn",
-    "en": "to look / watch",
-    "tr": "bakmak / izlemek",
-    "hsk": 1,
-    "compounds": [
-      "看见",
-      "看书",
-      "看电视"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "听",
-    "pinyin": "tīng",
-    "en": "to listen",
-    "tr": "dinlemek",
-    "hsk": 1,
-    "compounds": [
-      "听音乐",
-      "听说"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "音乐",
-    "pinyin": "yīnyuè",
-    "en": "music",
-    "tr": "müzik",
-    "hsk": 2,
-    "compounds": [
-      "音",
-      "乐",
-      "听音乐"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "大",
-    "pinyin": "dà",
-    "en": "big",
-    "tr": "büyük",
-    "hsk": 1,
-    "compounds": [
-      "大学",
-      "大家"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "小",
-    "pinyin": "xiǎo",
-    "en": "small",
-    "tr": "küçük",
-    "hsk": 1,
-    "compounds": [
-      "小学",
-      "小时"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "多",
-    "pinyin": "duō",
-    "en": "many",
-    "tr": "çok",
-    "hsk": 1,
-    "compounds": [
-      "多少",
-      "很多"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "少",
-    "pinyin": "shǎo",
-    "en": "few",
-    "tr": "az",
-    "hsk": 1,
-    "compounds": [
-      "多少",
-      "很少"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "天气",
-    "pinyin": "tiānqì",
-    "en": "weather",
-    "tr": "hava durumu",
-    "hsk": 1,
-    "compounds": [
-      "天",
-      "气"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "冷",
-    "pinyin": "lěng",
-    "en": "cold",
-    "tr": "soğuk",
-    "hsk": 1,
-    "compounds": [
-      "很冷"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "热",
-    "pinyin": "rè",
-    "en": "hot",
-    "tr": "sıcak",
-    "hsk": 1,
-    "compounds": [
-      "很热"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "下雨",
-    "pinyin": "xià yǔ",
-    "en": "to rain",
-    "tr": "yağmur yağması",
-    "hsk": 1,
-    "compounds": [
-      "下",
-      "雨"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "做",
-    "pinyin": "zuò",
-    "en": "to do",
-    "tr": "yapmak",
-    "hsk": 1,
-    "compounds": [
-      "做饭",
-      "做事"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "运动",
-    "pinyin": "yùndòng",
-    "en": "sports / exercise",
-    "tr": "spor / egzersiz",
-    "hsk": 2,
-    "compounds": [
-      "运",
-      "动"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "想",
-    "pinyin": "xiǎng",
-    "en": "to think / want",
-    "tr": "düşünmek / istemek",
-    "hsk": 1,
-    "compounds": [
-      "想法"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "要",
-    "pinyin": "yào",
-    "en": "to want / will",
-    "tr": "istemek / -ecek",
-    "hsk": 1,
-    "compounds": [
-      "不要"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "会",
-    "pinyin": "huì",
-    "en": "can / know how",
-    "tr": "yapabilmek / bilecek",
-    "hsk": 1,
-    "compounds": [
-      "不会",
-      "开会"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "能",
-    "pinyin": "néng",
-    "en": "can / be able to",
-    "tr": "yapabilmek",
-    "hsk": 1,
-    "compounds": [
-      "不能"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "认识",
-    "pinyin": "rènshi",
-    "en": "to know (somebody)",
-    "tr": "tanımak",
-    "hsk": 1,
-    "compounds": [
-      "认",
-      "识"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "觉得",
-    "pinyin": "juéde",
-    "en": "to feel / think",
-    "tr": "hissetmek / düşünmek",
-    "hsk": 2,
-    "compounds": [
-      "觉",
-      "得"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "块",
-    "pinyin": "kuài",
-    "en": "piece / yuan",
-    "tr": "parça / Yuan (para)",
-    "hsk": 1,
-    "compounds": [
-      "一块儿"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "漂亮",
-    "pinyin": "piàoliang",
-    "en": "pretty / beautiful",
-    "tr": "güzel",
-    "hsk": 1,
-    "compounds": [
-      "漂",
-      "亮"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "太",
-    "pinyin": "tài",
-    "en": "too",
-    "tr": "aşırı",
-    "hsk": 1,
-    "compounds": [
-      "太好了",
-      "太太"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "了",
-    "pinyin": "le",
-    "en": "completed action marker",
-    "tr": "geçmiş zaman eki",
-    "hsk": 1,
-    "compounds": [
-      "太好了",
-      "吃饭了"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "吗",
-    "pinyin": "ma",
-    "en": "question particle",
-    "tr": "soru eki (mı/mi)",
-    "hsk": 1,
-    "compounds": [
-      "好吗",
-      "是吗"
-    ],
-    "unit": 7
-  },
-  {
-    "hanzi": "呢",
-    "pinyin": "ne",
-    "en": "question particle",
-    "tr": "soru eki (ya ...?)",
-    "hsk": 1,
-    "compounds": [
-      "你呢"
-    ],
-    "unit": 7
-  }
-];
+      {
+        "hanzi": "好",
+        "pinyin": "hǎo",
+        "en": "good",
+        "tr": "iyi",
+        "hsk": 1,
+        "compounds": [
+          "你好",
+          "很好",
+          "好吃",
+          "好看"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "你",
+        "pinyin": "nǐ",
+        "en": "you",
+        "tr": "sen",
+        "hsk": 1,
+        "compounds": [
+          "你好",
+          "你们"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "我",
+        "pinyin": "wǒ",
+        "en": "I / me",
+        "tr": "ben",
+        "hsk": 1,
+        "compounds": [
+          "我们",
+          "我的"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "叫",
+        "pinyin": "jiào",
+        "en": "to call",
+        "tr": "adlandırmak / çağırmak",
+        "hsk": 1,
+        "compounds": [
+          "叫门"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "是",
+        "pinyin": "shì",
+        "en": "to be",
+        "tr": "olmak (-dır)",
+        "hsk": 1,
+        "compounds": [
+          "是不是",
+          "但是"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "人",
+        "pinyin": "rén",
+        "en": "person",
+        "tr": "insan / kişi",
+        "hsk": 1,
+        "compounds": [
+          "中国人",
+          "外国人",
+          "男人",
+          "女人"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "中国",
+        "pinyin": "Zhōngguó",
+        "en": "China",
+        "tr": "Çin",
+        "hsk": 1,
+        "compounds": [
+          "中",
+          "国"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "中",
+        "pinyin": "zhōng",
+        "en": "middle",
+        "tr": "orta",
+        "hsk": 1,
+        "compounds": [
+          "中国",
+          "中午",
+          "中间",
+          "中文"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "国",
+        "pinyin": "guó",
+        "en": "country",
+        "tr": "ülke",
+        "hsk": 1,
+        "compounds": [
+          "中国",
+          "外国",
+          "国家"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "老师",
+        "pinyin": "lǎoshī",
+        "en": "teacher",
+        "tr": "öğretmen",
+        "hsk": 1,
+        "compounds": [
+          "老",
+          "师"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "学生",
+        "pinyin": "xuésheng",
+        "en": "student",
+        "tr": "öğrenci",
+        "hsk": 1,
+        "compounds": [
+          "学",
+          "生"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "学",
+        "pinyin": "xué",
+        "en": "study",
+        "tr": "öğrenmek",
+        "hsk": 1,
+        "compounds": [
+          "学生",
+          "学习",
+          "学校",
+          "大学"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "生",
+        "pinyin": "shēng",
+        "en": "born / life",
+        "tr": "doğmak / hayat",
+        "hsk": 1,
+        "compounds": [
+          "学生",
+          "生日",
+          "医生",
+          "生活",
+          "女生",
+          "男生"
+        ],
+        "unit": 1
+      },
+      {
+        "hanzi": "这",
+        "pinyin": "zhè",
+        "en": "this",
+        "tr": "bu",
+        "hsk": 1,
+        "compounds": [
+          "这个",
+          "这里"
+        ],
+        "unit": 2
+      },
+      {
+        "hanzi": "的",
+        "pinyin": "de",
+        "en": "possessive particle",
+        "tr": "iyelik eki (-ın)",
+        "hsk": 1,
+        "compounds": [
+          "我的",
+          "你的",
+          "好的"
+        ],
+        "unit": 2
+      },
+      {
+        "hanzi": "书",
+        "pinyin": "shū",
+        "en": "book",
+        "tr": "kitap",
+        "hsk": 1,
+        "compounds": [
+          "书店",
+          "书架",
+          "看书",
+          "图书馆"
+        ],
+        "unit": 2
+      },
+      {
+        "hanzi": "有",
+        "pinyin": "yǒu",
+        "en": "to have",
+        "tr": "sahip olmak / var",
+        "hsk": 1,
+        "compounds": [
+          "没有",
+          "有名"
+        ],
+        "unit": 2
+      },
+      {
+        "hanzi": "没",
+        "pinyin": "méi",
+        "en": "not",
+        "tr": "yok",
+        "hsk": 1,
+        "compounds": [
+          "没有",
+          "没关系"
+        ],
+        "unit": 2
+      },
+      {
+        "hanzi": "没有",
+        "pinyin": "méiyǒu",
+        "en": "not have",
+        "tr": "sahip olmamak",
+        "hsk": 1,
+        "compounds": [
+          "没",
+          "有"
+        ],
+        "unit": 2
+      },
+      {
+        "hanzi": "本",
+        "pinyin": "běn",
+        "en": "measure word for books",
+        "tr": "kitap için miktar kelimesi",
+        "hsk": 1,
+        "compounds": [
+          "日本",
+          "本子",
+          "书本"
+        ],
+        "unit": 2
+      },
+      {
+        "hanzi": "什么",
+        "pinyin": "shénme",
+        "en": "what",
+        "tr": "ne",
+        "hsk": 1,
+        "compounds": [
+          "什么时候",
+          "为什么"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "家",
+        "pinyin": "jiā",
+        "en": "home / family",
+        "tr": "ev / aile",
+        "hsk": 1,
+        "compounds": [
+          "全家",
+          "大家",
+          "回家"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "谁",
+        "pinyin": "shéi",
+        "en": "who",
+        "tr": "kim",
+        "hsk": 1,
+        "compounds": [],
+        "unit": 3
+      },
+      {
+        "hanzi": "爸爸",
+        "pinyin": "bàba",
+        "en": "dad",
+        "tr": "baba",
+        "hsk": 1,
+        "compounds": [
+          "爸"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "妈妈",
+        "pinyin": "māma",
+        "en": "mom",
+        "tr": "anne",
+        "hsk": 1,
+        "compounds": [
+          "妈"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "哥哥",
+        "pinyin": "gēge",
+        "en": "older brother",
+        "tr": "abi",
+        "hsk": 1,
+        "compounds": [
+          "哥"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "弟弟",
+        "pinyin": "dìdi",
+        "en": "younger brother",
+        "tr": "erkek kardeş",
+        "hsk": 1,
+        "compounds": [
+          "弟"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "姐姐",
+        "pinyin": "jiějie",
+        "en": "older sister",
+        "tr": "abla",
+        "hsk": 1,
+        "compounds": [
+          "姐"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "妹妹",
+        "pinyin": "mèimei",
+        "en": "younger sister",
+        "tr": "kız kardeş",
+        "hsk": 1,
+        "compounds": [
+          "妹"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "工作",
+        "pinyin": "gōngzuò",
+        "en": "work",
+        "tr": "çalışmak / iş",
+        "hsk": 1,
+        "compounds": [
+          "工人"
+        ],
+        "unit": 3
+      },
+      {
+        "hanzi": "学习",
+        "pinyin": "xuéxí",
+        "en": "to study",
+        "tr": "çalışmak",
+        "hsk": 1,
+        "compounds": [
+          "学",
+          "习"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "汉语",
+        "pinyin": "Hànyǔ",
+        "en": "Chinese language",
+        "tr": "Çince",
+        "hsk": 1,
+        "compounds": [
+          "汉",
+          "语"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "语",
+        "pinyin": "yǔ",
+        "en": "language",
+        "tr": "dil",
+        "hsk": 1,
+        "compounds": [
+          "汉语",
+          "英语",
+          "语言"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "朋友",
+        "pinyin": "péngyou",
+        "en": "friend",
+        "tr": "arkadaş",
+        "hsk": 1,
+        "compounds": [
+          "好朋友"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "名字",
+        "pinyin": "míngzi",
+        "en": "name",
+        "tr": "isim",
+        "hsk": 1,
+        "compounds": [
+          "名",
+          "字"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "哪",
+        "pinyin": "nǎ",
+        "en": "which",
+        "tr": "hangi",
+        "hsk": 1,
+        "compounds": [
+          "哪儿",
+          "哪个"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "外国",
+        "pinyin": "wàiguó",
+        "en": "foreign country",
+        "tr": "yabancı ülke",
+        "hsk": 1,
+        "compounds": [
+          "外",
+          "国"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "外",
+        "pinyin": "wài",
+        "en": "outside",
+        "tr": "dış",
+        "hsk": 1,
+        "compounds": [
+          "外边",
+          "外国",
+          "外面"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "都",
+        "pinyin": "dōu",
+        "en": "all",
+        "tr": "hepsi",
+        "hsk": 1,
+        "compounds": [
+          "都是"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "请",
+        "pinyin": "qǐng",
+        "en": "please",
+        "tr": "lütfen",
+        "hsk": 1,
+        "compounds": [
+          "请问",
+          "请进",
+          "请客"
+        ],
+        "unit": 4
+      },
+      {
+        "hanzi": "天",
+        "pinyin": "tiān",
+        "en": "day / sky",
+        "tr": "gün",
+        "hsk": 1,
+        "compounds": [
+          "今天",
+          "明天",
+          "昨天",
+          "星期天",
+          "天气"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "今天",
+        "pinyin": "jīntiān",
+        "en": "today",
+        "tr": "bugün",
+        "hsk": 1,
+        "compounds": [
+          "今",
+          "天"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "明天",
+        "pinyin": "míngtiān",
+        "en": "tomorrow",
+        "tr": "yarın",
+        "hsk": 1,
+        "compounds": [
+          "明",
+          "天"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "昨天",
+        "pinyin": "zuótiān",
+        "en": "yesterday",
+        "tr": "dün",
+        "hsk": 1,
+        "compounds": [
+          "昨",
+          "天"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "生日",
+        "pinyin": "shēngrì",
+        "en": "birthday",
+        "tr": "doğum günü",
+        "hsk": 1,
+        "compounds": [
+          "生",
+          "日"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "日",
+        "pinyin": "rì",
+        "en": "day / sun",
+        "tr": "gün / güneş",
+        "hsk": 1,
+        "compounds": [
+          "生日",
+          "日本",
+          "日记"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "快乐",
+        "pinyin": "kuàilè",
+        "en": "happy",
+        "tr": "mutlu",
+        "hsk": 1,
+        "compounds": [
+          "快",
+          "乐"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "谢谢",
+        "pinyin": "xièxie",
+        "en": "thanks",
+        "tr": "teşekkürler",
+        "hsk": 1,
+        "compounds": [
+          "不用谢"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "月",
+        "pinyin": "yuè",
+        "en": "month",
+        "tr": "ay",
+        "hsk": 1,
+        "compounds": [
+          "一月",
+          "二月",
+          "几个月"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "星期",
+        "pinyin": "xīngqī",
+        "en": "week",
+        "tr": "hafta",
+        "hsk": 1,
+        "compounds": [
+          "星",
+          "期",
+          "星期天"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "很",
+        "pinyin": "hěn",
+        "en": "very",
+        "tr": "çok",
+        "hsk": 1,
+        "compounds": [
+          "很好",
+          "很高兴",
+          "很大"
+        ],
+        "unit": 5
+      },
+      {
+        "hanzi": "现在",
+        "pinyin": "xiànzài",
+        "en": "now",
+        "tr": "şimdi",
+        "hsk": 1,
+        "compounds": [
+          "现",
+          "在"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "点",
+        "pinyin": "diǎn",
+        "en": "o'clock",
+        "tr": "saat (vakit)",
+        "hsk": 1,
+        "compounds": [
+          "几点",
+          "一点儿"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "分",
+        "pinyin": "fēn",
+        "en": "minute",
+        "tr": "dakika",
+        "hsk": 1,
+        "compounds": [
+          "分钟"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "早上",
+        "pinyin": "zǎoshang",
+        "en": "morning",
+        "tr": "sabah",
+        "hsk": 1,
+        "compounds": [
+          "早",
+          "上"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "晚上",
+        "pinyin": "wǎnshang",
+        "en": "evening",
+        "tr": "akşam",
+        "hsk": 1,
+        "compounds": [
+          "晚",
+          "上"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "上午",
+        "pinyin": "shàngwǔ",
+        "en": "morning",
+        "tr": "öğleden önce",
+        "hsk": 1,
+        "compounds": [
+          "上",
+          "午"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "下午",
+        "pinyin": "xiàwǔ",
+        "en": "afternoon",
+        "tr": "öğleden sonra",
+        "hsk": 1,
+        "compounds": [
+          "下",
+          "午"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "中午",
+        "pinyin": "zhōngwǔ",
+        "en": "noon",
+        "tr": "öğle",
+        "hsk": 1,
+        "compounds": [
+          "中",
+          "午"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "上",
+        "pinyin": "shàng",
+        "en": "up / above",
+        "tr": "yukarı",
+        "hsk": 1,
+        "compounds": [
+          "上午",
+          "上边",
+          "上课",
+          "上班"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "下",
+        "pinyin": "xià",
+        "en": "down / below",
+        "tr": "aşağı",
+        "hsk": 1,
+        "compounds": [
+          "下午",
+          "下边",
+          "下课",
+          "下雨"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "午",
+        "pinyin": "wǔ",
+        "en": "noon",
+        "tr": "öğle",
+        "hsk": 1,
+        "compounds": [
+          "上午",
+          "中午",
+          "下午"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "课",
+        "pinyin": "kè",
+        "en": "class / lesson",
+        "tr": "ders",
+        "hsk": 1,
+        "compounds": [
+          "上课",
+          "下课"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "半",
+        "pinyin": "bàn",
+        "en": "half",
+        "tr": "buçuk / yarım",
+        "hsk": 1,
+        "compounds": [
+          "一半",
+          "半个"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "睡觉",
+        "pinyin": "shuìjiào",
+        "en": "sleep",
+        "tr": "uyumak",
+        "hsk": 1,
+        "compounds": [
+          "睡",
+          "觉"
+        ],
+        "unit": 6
+      },
+      {
+        "hanzi": "银行",
+        "pinyin": "yínháng",
+        "en": "bank",
+        "tr": "banka",
+        "hsk": 2,
+        "compounds": [
+          "银",
+          "行"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "在",
+        "pinyin": "zài",
+        "en": "at / in",
+        "tr": "bulunmak",
+        "hsk": 1,
+        "compounds": [
+          "现在",
+          "在家"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "哪儿",
+        "pinyin": "nǎr",
+        "en": "where",
+        "tr": "nerede",
+        "hsk": 1,
+        "compounds": [
+          "哪"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "边",
+        "pinyin": "bian",
+        "en": "side",
+        "tr": "kenar / taraf",
+        "hsk": 1,
+        "compounds": [
+          "东边",
+          "西边",
+          "南边",
+          "北边",
+          "前边",
+          "后边",
+          "上边",
+          "下边",
+          "旁边"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "东",
+        "pinyin": "dōng",
+        "en": "east",
+        "tr": "doğu",
+        "hsk": 1,
+        "compounds": [
+          "东边",
+          "东西"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "西",
+        "pinyin": "xī",
+        "en": "west",
+        "tr": "batı",
+        "hsk": 1,
+        "compounds": [
+          "西边",
+          "东西"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "南",
+        "pinyin": "nán",
+        "en": "south",
+        "tr": "güney",
+        "hsk": 1,
+        "compounds": [
+          "南边"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "北",
+        "pinyin": "běi",
+        "en": "north",
+        "tr": "kuzey",
+        "hsk": 1,
+        "compounds": [
+          "北边",
+          "北京"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "前",
+        "pinyin": "qián",
+        "en": "front",
+        "tr": "ön",
+        "hsk": 1,
+        "compounds": [
+          "前边",
+          "以前"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "后",
+        "pinyin": "hòu",
+        "en": "back",
+        "tr": "arka",
+        "hsk": 1,
+        "compounds": [
+          "后边",
+          "以后"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "地方",
+        "pinyin": "dìfang",
+        "en": "place",
+        "tr": "yer",
+        "hsk": 1,
+        "compounds": [
+          "地",
+          "方"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "学校",
+        "pinyin": "xuéxiào",
+        "en": "school",
+        "tr": "okul",
+        "hsk": 1,
+        "compounds": [
+          "学",
+          "校"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "房间",
+        "pinyin": "fángjiān",
+        "en": "room",
+        "tr": "oda",
+        "hsk": 2,
+        "compounds": [
+          "房",
+          "间"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "间",
+        "pinyin": "jiān",
+        "en": "room / between",
+        "tr": "oda / arası",
+        "hsk": 1,
+        "compounds": [
+          "房间",
+          "中间",
+          "时间"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "里",
+        "pinyin": "lǐ",
+        "en": "inside",
+        "tr": "içinde",
+        "hsk": 1,
+        "compounds": [
+          "里边",
+          "家里"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "桌子",
+        "pinyin": "zhuōzi",
+        "en": "desk / table",
+        "tr": "masa",
+        "hsk": 1,
+        "compounds": [
+          "桌"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "旁边",
+        "pinyin": "pángbiān",
+        "en": "beside",
+        "tr": "yan taraf",
+        "hsk": 1,
+        "compounds": [
+          "旁",
+          "边"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "中间",
+        "pinyin": "zhōngjiān",
+        "en": "middle",
+        "tr": "orta",
+        "hsk": 1,
+        "compounds": [
+          "中",
+          "间"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "或者",
+        "pinyin": "huòzhě",
+        "en": "or",
+        "tr": "veya / ya da",
+        "hsk": 2,
+        "compounds": [
+          "或",
+          "者"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "图书馆",
+        "pinyin": "túshūguǎn",
+        "en": "library",
+        "tr": "kütüphane",
+        "hsk": 2,
+        "compounds": [
+          "图",
+          "书",
+          "馆"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "写",
+        "pinyin": "xiě",
+        "en": "to write",
+        "tr": "yazmak",
+        "hsk": 1,
+        "compounds": [
+          "写信",
+          "写字"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "信",
+        "pinyin": "xìn",
+        "en": "letter",
+        "tr": "mektup",
+        "hsk": 1,
+        "compounds": [
+          "写信"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "同屋",
+        "pinyin": "tóngwū",
+        "en": "roommate",
+        "tr": "oda arkadaşı",
+        "hsk": 2,
+        "compounds": [
+          "同",
+          "屋",
+          "同学"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "常常",
+        "pinyin": "chángcháng",
+        "en": "often",
+        "tr": "sık sık",
+        "hsk": 2,
+        "compounds": [
+          "常"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "电视",
+        "pinyin": "diànshì",
+        "en": "television",
+        "tr": "televizyon",
+        "hsk": 1,
+        "compounds": [
+          "电",
+          "视",
+          "看电视"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "聊天儿",
+        "pinyin": "liáotiānr",
+        "en": "to chat",
+        "tr": "sohbet etmek",
+        "hsk": 2,
+        "compounds": [
+          "聊",
+          "天"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "食堂",
+        "pinyin": "shítáng",
+        "en": "dining hall",
+        "tr": "yemekhane",
+        "hsk": 2,
+        "compounds": [
+          "食",
+          "堂"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "去",
+        "pinyin": "qù",
+        "en": "to go",
+        "tr": "gitmek",
+        "hsk": 1,
+        "compounds": [
+          "去年",
+          "进去"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "来",
+        "pinyin": "lái",
+        "en": "to come",
+        "tr": "gelmek",
+        "hsk": 1,
+        "compounds": [
+          "回来",
+          "出来"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "买",
+        "pinyin": "mǎi",
+        "en": "to buy",
+        "tr": "satın almak",
+        "hsk": 1,
+        "compounds": [
+          "买东西"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "卖",
+        "pinyin": "mài",
+        "en": "to sell",
+        "tr": "satmak",
+        "hsk": 1,
+        "compounds": [
+          "买卖"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "东西",
+        "pinyin": "dōngxi",
+        "en": "thing",
+        "tr": "eşya / şey",
+        "hsk": 1,
+        "compounds": [
+          "东",
+          "西",
+          "买东西"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "苹果",
+        "pinyin": "píngguǒ",
+        "en": "apple",
+        "tr": "elma",
+        "hsk": 1,
+        "compounds": [
+          "果",
+          "水果"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "钱",
+        "pinyin": "qián",
+        "en": "money",
+        "tr": "para",
+        "hsk": 1,
+        "compounds": [
+          "多少钱",
+          "有钱"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "贵",
+        "pinyin": "guì",
+        "en": "expensive",
+        "tr": "pahalı",
+        "hsk": 2,
+        "compounds": [
+          "太贵了"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "便宜",
+        "pinyin": "piányi",
+        "en": "cheap",
+        "tr": "ucuz",
+        "hsk": 2,
+        "compounds": [
+          "便",
+          "宜"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "吃",
+        "pinyin": "chī",
+        "en": "to eat",
+        "tr": "yemek",
+        "hsk": 1,
+        "compounds": [
+          "吃饭",
+          "好吃"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "饭",
+        "pinyin": "fàn",
+        "en": "meal / rice",
+        "tr": "yemek / pilav",
+        "hsk": 1,
+        "compounds": [
+          "吃饭",
+          "米饭",
+          "早饭"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "喝",
+        "pinyin": "hē",
+        "en": "to drink",
+        "tr": "içmek",
+        "hsk": 1,
+        "compounds": [
+          "喝水",
+          "喝茶"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "水",
+        "pinyin": "shuǐ",
+        "en": "water",
+        "tr": "su",
+        "hsk": 1,
+        "compounds": [
+          "喝水",
+          "水果"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "茶",
+        "pinyin": "chá",
+        "en": "tea",
+        "tr": "çay",
+        "hsk": 1,
+        "compounds": [
+          "喝茶"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "喜欢",
+        "pinyin": "xǐhuan",
+        "en": "to like",
+        "tr": "hoşlanmak",
+        "hsk": 1,
+        "compounds": [
+          "喜",
+          "欢"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "看",
+        "pinyin": "kàn",
+        "en": "to look / watch",
+        "tr": "bakmak / izlemek",
+        "hsk": 1,
+        "compounds": [
+          "看见",
+          "看书",
+          "看电视"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "听",
+        "pinyin": "tīng",
+        "en": "to listen",
+        "tr": "dinlemek",
+        "hsk": 1,
+        "compounds": [
+          "听音乐",
+          "听说"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "音乐",
+        "pinyin": "yīnyuè",
+        "en": "music",
+        "tr": "müzik",
+        "hsk": 2,
+        "compounds": [
+          "音",
+          "乐",
+          "听音乐"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "大",
+        "pinyin": "dà",
+        "en": "big",
+        "tr": "büyük",
+        "hsk": 1,
+        "compounds": [
+          "大学",
+          "大家"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "小",
+        "pinyin": "xiǎo",
+        "en": "small",
+        "tr": "küçük",
+        "hsk": 1,
+        "compounds": [
+          "小学",
+          "小时"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "多",
+        "pinyin": "duō",
+        "en": "many",
+        "tr": "çok",
+        "hsk": 1,
+        "compounds": [
+          "多少",
+          "很多"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "少",
+        "pinyin": "shǎo",
+        "en": "few",
+        "tr": "az",
+        "hsk": 1,
+        "compounds": [
+          "多少",
+          "很少"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "天气",
+        "pinyin": "tiānqì",
+        "en": "weather",
+        "tr": "hava durumu",
+        "hsk": 1,
+        "compounds": [
+          "天",
+          "气"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "冷",
+        "pinyin": "lěng",
+        "en": "cold",
+        "tr": "soğuk",
+        "hsk": 1,
+        "compounds": [
+          "很冷"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "热",
+        "pinyin": "rè",
+        "en": "hot",
+        "tr": "sıcak",
+        "hsk": 1,
+        "compounds": [
+          "很热"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "下雨",
+        "pinyin": "xià yǔ",
+        "en": "to rain",
+        "tr": "yağmur yağması",
+        "hsk": 1,
+        "compounds": [
+          "下",
+          "雨"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "做",
+        "pinyin": "zuò",
+        "en": "to do",
+        "tr": "yapmak",
+        "hsk": 1,
+        "compounds": [
+          "做饭",
+          "做事"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "运动",
+        "pinyin": "yùndòng",
+        "en": "sports / exercise",
+        "tr": "spor / egzersiz",
+        "hsk": 2,
+        "compounds": [
+          "运",
+          "动"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "想",
+        "pinyin": "xiǎng",
+        "en": "to think / want",
+        "tr": "düşünmek / istemek",
+        "hsk": 1,
+        "compounds": [
+          "想法"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "要",
+        "pinyin": "yào",
+        "en": "to want / will",
+        "tr": "istemek / -ecek",
+        "hsk": 1,
+        "compounds": [
+          "不要"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "会",
+        "pinyin": "huì",
+        "en": "can / know how",
+        "tr": "yapabilmek / bilecek",
+        "hsk": 1,
+        "compounds": [
+          "不会",
+          "开会"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "能",
+        "pinyin": "néng",
+        "en": "can / be able to",
+        "tr": "yapabilmek",
+        "hsk": 1,
+        "compounds": [
+          "不能"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "认识",
+        "pinyin": "rènshi",
+        "en": "to know (somebody)",
+        "tr": "tanımak",
+        "hsk": 1,
+        "compounds": [
+          "认",
+          "识"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "觉得",
+        "pinyin": "juéde",
+        "en": "to feel / think",
+        "tr": "hissetmek / düşünmek",
+        "hsk": 2,
+        "compounds": [
+          "觉",
+          "得"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "块",
+        "pinyin": "kuài",
+        "en": "piece / yuan",
+        "tr": "parça / Yuan (para)",
+        "hsk": 1,
+        "compounds": [
+          "一块儿"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "漂亮",
+        "pinyin": "piàoliang",
+        "en": "pretty / beautiful",
+        "tr": "güzel",
+        "hsk": 1,
+        "compounds": [
+          "漂",
+          "亮"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "太",
+        "pinyin": "tài",
+        "en": "too",
+        "tr": "aşırı",
+        "hsk": 1,
+        "compounds": [
+          "太好了",
+          "太太"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "了",
+        "pinyin": "le",
+        "en": "completed action marker",
+        "tr": "geçmiş zaman eki",
+        "hsk": 1,
+        "compounds": [
+          "太好了",
+          "吃饭了"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "吗",
+        "pinyin": "ma",
+        "en": "question particle",
+        "tr": "soru eki (mı/mi)",
+        "hsk": 1,
+        "compounds": [
+          "好吗",
+          "是吗"
+        ],
+        "unit": 7
+      },
+      {
+        "hanzi": "呢",
+        "pinyin": "ne",
+        "en": "question particle",
+        "tr": "soru eki (ya ...?)",
+        "hsk": 1,
+        "compounds": [
+          "你呢"
+        ],
+        "unit": 7
+      }
+    ];
 
     const SENTENCES = [
-  {
-    "cn": "你好，我叫大卫。",
-    "py": "Nǐ hǎo, wǒ jiào Dàwèi.",
-    "tr": "Merhaba, benim adım David.",
-    "blocks": [
-      "你",
-      "好",
-      "，",
-      "我",
-      "叫",
-      "大卫",
-      "。"
-    ]
-  },
-  {
-    "cn": "你是哪国人？",
-    "py": "Nǐ shì nǎ guó rén?",
-    "tr": "Sen hangi ülkedensin?",
-    "blocks": [
-      "你",
-      "是",
-      "哪",
-      "国",
-      "人",
-      "？"
-    ]
-  },
-  {
-    "cn": "我们是学生。",
-    "py": "Wǒmen shì xuésheng.",
-    "tr": "Biz öğrenciyiz.",
-    "blocks": [
-      "我们",
-      "是",
-      "学生",
-      "。"
-    ]
-  },
-  {
-    "cn": "这是我的书。",
-    "py": "Zhè shì wǒ de shū.",
-    "tr": "Bu benim kitabım.",
-    "blocks": [
-      "这",
-      "是",
-      "我",
-      "的",
-      "书",
-      "。"
-    ]
-  },
-  {
-    "cn": "你家有几口人？",
-    "py": "Nǐ jiā yǒu jǐ kǒu rén?",
-    "tr": "Ailende kaç kişi var?",
-    "blocks": [
-      "你",
-      "家",
-      "有",
-      "几",
-      "口",
-      "人",
-      "？"
-    ]
-  },
-  {
-    "cn": "明天星期几？",
-    "py": "Míngtiān xīngqī jǐ?",
-    "tr": "Yarın günlerden ne?",
-    "blocks": [
-      "明天",
-      "星期",
-      "几",
-      "？"
-    ]
-  },
-  {
-    "cn": "祝你生日快乐！",
-    "py": "Zhù nǐ shēngrì kuàilè!",
-    "tr": "Doğum günün kutlu olsun!",
-    "blocks": [
-      "祝",
-      "你",
-      "生日",
-      "快乐",
-      "！"
-    ]
-  },
-  {
-    "cn": "现在几点？",
-    "py": "Xiànzài jǐ diǎn?",
-    "tr": "Şu an saat kaç?",
-    "blocks": [
-      "现在",
-      "几",
-      "点",
-      "？"
-    ]
-  },
-  {
-    "cn": "银行在哪儿？",
-    "py": "Yínháng zài nǎr?",
-    "tr": "Banka nerede?",
-    "blocks": [
-      "银行",
-      "在",
-      "哪儿",
-      "？"
-    ]
-  },
-  {
-    "cn": "桌子上有一本书。",
-    "py": "Zhuōzi shang yǒu yì běn shū.",
-    "tr": "Masanın üzerinde bir kitap var.",
-    "blocks": [
-      "桌子",
-      "上",
-      "有",
-      "一",
-      "本",
-      "书",
-      "。"
-    ]
-  },
-  {
-    "cn": "我不去学校。",
-    "py": "Wǒ bú qù xuéxiào.",
-    "tr": "Ben okula gitmiyorum.",
-    "blocks": [
-      "我",
-      "不",
-      "去",
-      "学校",
-      "。"
-    ]
-  },
-  {
-    "cn": "他在房间里睡觉。",
-    "py": "Tā zài fángjiān lǐ shuìjiào.",
-    "tr": "O, odanın içinde uyuyor.",
-    "blocks": [
-      "他",
-      "在",
-      "房间",
-      "里",
-      "睡觉",
-      "。"
-    ]
-  },
-  {
-    "cn": "你去图书馆吗？",
-    "py": "Nǐ qù túshūguǎn ma?",
-    "tr": "Kütüphaneye gidiyor musun?",
-    "blocks": [
-      "你",
-      "去",
-      "图书馆",
-      "吗",
-      "？"
-    ]
-  },
-  {
-    "cn": "我喜欢看电影。",
-    "py": "Wǒ xǐhuan kàn diànyǐng.",
-    "tr": "Film izlemeyi severim.",
-    "blocks": [
-      "我",
-      "喜欢",
-      "看",
-      "电影",
-      "。"
-    ]
-  },
-  {
-    "cn": "这个苹果多少钱？",
-    "py": "Zhège píngguǒ duōshao qián?",
-    "tr": "Bu elma ne kadar?",
-    "blocks": [
-      "这个",
-      "苹果",
-      "多少钱",
-      "？"
-    ]
-  },
-  {
-    "cn": "太贵了，便宜一点儿吧。",
-    "py": "Tài guì le, piányi yìdiǎnr ba.",
-    "tr": "Çok pahalı, biraz ucuz olsun.",
-    "blocks": [
-      "太贵了",
-      "，",
-      "便宜",
-      "一点儿",
-      "吧",
-      "。"
-    ]
-  },
-  {
-    "cn": "你想喝点儿什么？",
-    "py": "Nǐ xiǎng hē diǎnr shénme?",
-    "tr": "Ne içmek istersin?",
-    "blocks": [
-      "你",
-      "想",
-      "喝",
-      "点儿",
-      "什么",
-      "？"
-    ]
-  },
-  {
-    "cn": "今天天气很热。",
-    "py": "Jīntiān tiānqì hěn rè.",
-    "tr": "Bugün hava很热。",
-    "blocks": [
-      "今天",
-      "天气",
-      "很热",
-      "。"
-    ]
-  },
-  {
-    "cn": "很高兴认识你。",
-    "py": "Hěn gāoxìng rènshi nǐ.",
-    "tr": "Seni tanıdığıma çok sevindim.",
-    "blocks": [
-      "很高兴",
-      "认识",
-      "你",
-      "。"
-    ]
-  },
-  {
-    "cn": "你在做什么呢？",
-    "py": "Nǐ zài zuò shénme ne?",
-    "tr": "Ne yapıyorsun?",
-    "blocks": [
-      "你",
-      "在",
-      "做",
-      "什么",
-      "呢",
-      "？"
-    ]
-  }
-];
+      {
+        "cn": "你好，我叫大卫。",
+        "py": "Nǐ hǎo, wǒ jiào Dàwèi.",
+        "tr": "Merhaba, benim adım David.",
+        "blocks": [
+          "你",
+          "好",
+          "，",
+          "我",
+          "叫",
+          "大卫",
+          "。"
+        ]
+      },
+      {
+        "cn": "你是哪国人？",
+        "py": "Nǐ shì nǎ guó rén?",
+        "tr": "Sen hangi ülkedensin?",
+        "blocks": [
+          "你",
+          "是",
+          "哪",
+          "国",
+          "人",
+          "？"
+        ]
+      },
+      {
+        "cn": "我们是学生。",
+        "py": "Wǒmen shì xuésheng.",
+        "tr": "Biz öğrenciyiz.",
+        "blocks": [
+          "我们",
+          "是",
+          "学生",
+          "。"
+        ]
+      },
+      {
+        "cn": "这是我的书。",
+        "py": "Zhè shì wǒ de shū.",
+        "tr": "Bu benim kitabım.",
+        "blocks": [
+          "这",
+          "是",
+          "我",
+          "的",
+          "书",
+          "。"
+        ]
+      },
+      {
+        "cn": "你家有几口人？",
+        "py": "Nǐ jiā yǒu jǐ kǒu rén?",
+        "tr": "Ailende kaç kişi var?",
+        "blocks": [
+          "你",
+          "家",
+          "有",
+          "几",
+          "口",
+          "人",
+          "？"
+        ]
+      },
+      {
+        "cn": "明天星期几？",
+        "py": "Míngtiān xīngqī jǐ?",
+        "tr": "Yarın günlerden ne?",
+        "blocks": [
+          "明天",
+          "星期",
+          "几",
+          "？"
+        ]
+      },
+      {
+        "cn": "祝你生日快乐！",
+        "py": "Zhù nǐ shēngrì kuàilè!",
+        "tr": "Doğum günün kutlu olsun!",
+        "blocks": [
+          "祝",
+          "你",
+          "生日",
+          "快乐",
+          "！"
+        ]
+      },
+      {
+        "cn": "现在几点？",
+        "py": "Xiànzài jǐ diǎn?",
+        "tr": "Şu an saat kaç?",
+        "blocks": [
+          "现在",
+          "几",
+          "点",
+          "？"
+        ]
+      },
+      {
+        "cn": "银行在哪儿？",
+        "py": "Yínháng zài nǎr?",
+        "tr": "Banka nerede?",
+        "blocks": [
+          "银行",
+          "在",
+          "哪儿",
+          "？"
+        ]
+      },
+      {
+        "cn": "桌子上有一本书。",
+        "py": "Zhuōzi shang yǒu yì běn shū.",
+        "tr": "Masanın üzerinde bir kitap var.",
+        "blocks": [
+          "桌子",
+          "上",
+          "有",
+          "一",
+          "本",
+          "书",
+          "。"
+        ]
+      },
+      {
+        "cn": "我不去学校。",
+        "py": "Wǒ bú qù xuéxiào.",
+        "tr": "Ben okula gitmiyorum.",
+        "blocks": [
+          "我",
+          "不",
+          "去",
+          "学校",
+          "。"
+        ]
+      },
+      {
+        "cn": "他在房间里睡觉。",
+        "py": "Tā zài fángjiān lǐ shuìjiào.",
+        "tr": "O, odanın içinde uyuyor.",
+        "blocks": [
+          "他",
+          "在",
+          "房间",
+          "里",
+          "睡觉",
+          "。"
+        ]
+      },
+      {
+        "cn": "你去图书馆吗？",
+        "py": "Nǐ qù túshūguǎn ma?",
+        "tr": "Kütüphaneye gidiyor musun?",
+        "blocks": [
+          "你",
+          "去",
+          "图书馆",
+          "吗",
+          "？"
+        ]
+      },
+      {
+        "cn": "我喜欢看电影。",
+        "py": "Wǒ xǐhuan kàn diànyǐng.",
+        "tr": "Film izlemeyi severim.",
+        "blocks": [
+          "我",
+          "喜欢",
+          "看",
+          "电影",
+          "。"
+        ]
+      },
+      {
+        "cn": "这个苹果多少钱？",
+        "py": "Zhège píngguǒ duōshao qián?",
+        "tr": "Bu elma ne kadar?",
+        "blocks": [
+          "这个",
+          "苹果",
+          "多少钱",
+          "？"
+        ]
+      },
+      {
+        "cn": "太贵了，便宜一点儿吧。",
+        "py": "Tài guì le, piányi yìdiǎnr ba.",
+        "tr": "Çok pahalı, biraz ucuz olsun.",
+        "blocks": [
+          "太贵了",
+          "，",
+          "便宜",
+          "一点儿",
+          "吧",
+          "。"
+        ]
+      },
+      {
+        "cn": "你想喝点儿什么？",
+        "py": "Nǐ xiǎng hē diǎnr shénme?",
+        "tr": "Ne içmek istersin?",
+        "blocks": [
+          "你",
+          "想",
+          "喝",
+          "点儿",
+          "什么",
+          "？"
+        ]
+      },
+      {
+        "cn": "今天天气很热。",
+        "py": "Jīntiān tiānqì hěn rè.",
+        "tr": "Bugün hava很热。",
+        "blocks": [
+          "今天",
+          "天气",
+          "很热",
+          "。"
+        ]
+      },
+      {
+        "cn": "很高兴认识你。",
+        "py": "Hěn gāoxìng rènshi nǐ.",
+        "tr": "Seni tanıdığıma çok sevindim.",
+        "blocks": [
+          "很高兴",
+          "认识",
+          "你",
+          "。"
+        ]
+      },
+      {
+        "cn": "你在做什么呢？",
+        "py": "Nǐ zài zuò shénme ne?",
+        "tr": "Ne yapıyorsun?",
+        "blocks": [
+          "你",
+          "在",
+          "做",
+          "什么",
+          "呢",
+          "？"
+        ]
+      }
+    ];
 
     // ══════════════════════════════════════════════════════════════
     //  FILTER
     // ══════════════════════════════════════════════════════════════
     function filterWords() {
-  const l = S.hskLevel;
-  const u = S.unitFilter || 'all';
-  let filtered = l === 'all' ? WORDS : l === '1-2' ? WORDS.filter(w => w.hsk <= 2) : l === '3-4' ? WORDS.filter(w => w.hsk >= 3 && w.hsk <= 4) : WORDS.filter(w => w.hsk >= 5);
-  
-  if (u !== 'all') {
-    filtered = filtered.filter(w => w.unit == u || (u==7 && w.unit==8)); // 7 & 8 are combined usually
-  }
-  S.words = filtered;
-}
+      const l = S.hskLevel;
+      const u = S.unitFilter || 'all';
+      let filtered = l === 'all' ? WORDS : l === '1-2' ? WORDS.filter(w => w.hsk <= 2) : l === '3-4' ? WORDS.filter(w => w.hsk >= 3 && w.hsk <= 4) : WORDS.filter(w => w.hsk >= 5);
+
+      if (u !== 'all') {
+        filtered = filtered.filter(w => w.unit == u || (u == 7 && w.unit == 8)); // 7 & 8 are combined usually
+      }
+      S.words = filtered;
+    }
 
     // ══════════════════════════════════════════════════════════════
     //  D3 GRAPH
@@ -2889,20 +2887,20 @@
     // ══════════════════════════════════════════════════════════════
     function render() {
       document.addEventListener('click', e => {
-      const p = e.target.closest('.pill');
-      if (p) {
-        if (p.dataset.level) S.hskLevel = p.dataset.level;
-        if (p.dataset.unit) S.unitFilter = p.dataset.unit;
-        S.flashIdx = 0; S.flashFlipped = false; S.flashOrder = [];
-        S.quizIdx = 0; S.quizScore = []; S.quizOptions = []; S.quizOrder = [];
-        filterWords(); 
-        if (S.tab === 'dictionary') { renderDict(); renderGraph(S.selected); }
-        if (S.tab === 'flashcards') { renderFlash(); }
-        if (S.tab === 'quiz') { initQuiz(); renderQuiz(); }
-      }
-    });
+        const p = e.target.closest('.pill');
+        if (p) {
+          if (p.dataset.level) S.hskLevel = p.dataset.level;
+          if (p.dataset.unit) S.unitFilter = p.dataset.unit;
+          S.flashIdx = 0; S.flashFlipped = false; S.flashOrder = [];
+          S.quizIdx = 0; S.quizScore = []; S.quizOptions = []; S.quizOrder = [];
+          filterWords();
+          if (S.tab === 'dictionary') { renderDict(); renderGraph(S.selected); }
+          if (S.tab === 'flashcards') { renderFlash(); }
+          if (S.tab === 'quiz') { initQuiz(); renderQuiz(); }
+        }
+      });
 
-    document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === S.tab));
+      document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === S.tab));
       if (S.tab === 'dictionary') renderDict();
       else if (S.tab === 'flashcards') renderFlash();
       else if (S.tab === 'sentences') renderSent();
@@ -2911,17 +2909,15 @@
     }
 
     function levelPills() {
-  const hsk = ['all', '1-2', '3-4', '5-6'].map(l => `<button class="pill ${S.hskLevel === l ? 'active' : ''}" data-level="${l}">${l === 'all' ? 'Tümü' : 'HSK ' + l}</button>`).join('');
-  let unitsHtml = '';
-  if (S.tab === 'flashcards' || S.tab === 'dictionary' || S.tab === 'quiz') {
-    const units = [1,2,3,4,5,6,7,8,9];
-    unitsHtml = '<div style="width:100%; height:4px"></div>' + '<button class="pill ' + (S.unitFilter === 'all' ? 'active' : '') + '" data-unit="all">Tüm Üniteler</button>' + 
-      units.map(u => `<button class="pill ${S.unitFilter == u ? 'active' : ''}" data-unit="${u}">Ünite ${u}</button>`).join('');
-  }
-  return hsk + unitsHtml;
-}" data-level="${l}">${l === 'all' ? 'Tümü' : 'HSK ' + l}</button>`).join('');
+      const hsk = ['all', '1-2', '3-4', '5-6'].map(l => `<button class="pill ${S.hskLevel === l ? 'active' : ''}" data-level="${l}">${l === 'all' ? 'Tümü' : 'HSK ' + l}</button>`).join('');
+      let unitsHtml = '';
+      if (S.tab === 'flashcards' || S.tab === 'dictionary' || S.tab === 'quiz') {
+        const units = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        unitsHtml = '<div style="width:100%; height:4px"></div>' + '<button class="pill ' + (S.unitFilter === 'all' ? 'active' : '') + '" data-unit="all">Tüm Üniteler</button>' +
+          units.map(u => `<button class="pill ${S.unitFilter == u ? 'active' : ''}" data-unit="${u}">Ünite ${u}</button>`).join('');
+      }
+      return hsk + unitsHtml;
     }
-
     // ── DICTIONARY ────────────────────────────────────────────────
     let hwWriter = null;
     function renderStroke(boxId, hanzi) {
@@ -2939,7 +2935,7 @@
           outlineColor: '#2e2e38'
         });
         hwWriter.loopCharacterAnimation();
-      } catch(e) { console.error('HanziWriter err', e); }
+      } catch (e) { console.error('HanziWriter err', e); }
     }
     function renderDict() {
       const f = S.words.filter(w => { const q = S.graphSearch.toLowerCase().trim(); return !q || w.hanzi.includes(q) || w.pinyin.toLowerCase().includes(q) || (w.tr || '').toLowerCase().includes(q) || (w.en || '').toLowerCase().includes(q); }).slice(0, 120);
@@ -2972,7 +2968,7 @@
         if (q) { const w = S.words.find(x => x.hanzi === q) || S.words.find(x => x.hanzi.includes(q) || x.pinyin.toLowerCase().includes(q)); if (w) S.selected = w; }
         renderDict(); renderGraph(S.selected);
       });
-      
+
       document.querySelectorAll('.word-row').forEach(r => r.addEventListener('click', () => { S.selected = WORDS.find(x => x.hanzi === r.dataset.h); renderDict(); renderGraph(S.selected); }));
       bindDet(); setTimeout(() => renderGraph(S.selected), 40);
     }
@@ -3022,18 +3018,18 @@
 
     // ── FLASHCARDS ────────────────────────────────────────────────
     function renderFlash() {
-  const pool = S.words.length ? S.words : WORDS;
-  if (S.flashOrder.length !== pool.length) {
-    S.flashOrder = pool.map((_, i) => i).sort(() => 0.5 - Math.random());
-    S.flashIdx = 0;
-  }
-  if (S.flashIdx >= pool.length) S.flashIdx = 0;
-  const c = pool[S.flashOrder[S.flashIdx]];
-  
-  const exs = SENTENCES.filter(s => s.cn.includes(c.hanzi)).slice(0, 1);
-  const vidHtml = `<a class="video-card" href="https://youglish.com/pronounce/${encodeURIComponent(c.hanzi)}/chinese" target="_blank" rel="noopener" style="margin-top:0.4rem; padding:0.3rem"><span class="video-badge" style="background:#E50914;color:white">YouGlish Video</span></a>`;
+      const pool = S.words.length ? S.words : WORDS;
+      if (S.flashOrder.length !== pool.length) {
+        S.flashOrder = pool.map((_, i) => i).sort(() => 0.5 - Math.random());
+        S.flashIdx = 0;
+      }
+      if (S.flashIdx >= pool.length) S.flashIdx = 0;
+      const c = pool[S.flashOrder[S.flashIdx]];
 
-  document.getElementById('main').innerHTML = `
+      const exs = SENTENCES.filter(s => s.cn.includes(c.hanzi)).slice(0, 1);
+      const vidHtml = `<a class="video-card" href="https://youglish.com/pronounce/${encodeURIComponent(c.hanzi)}/chinese" target="_blank" rel="noopener" style="margin-top:0.4rem; padding:0.3rem"><span class="video-badge" style="background:#E50914;color:white">YouGlish Video</span></a>`;
+
+      document.getElementById('main').innerHTML = `
   <div style="display:flex;flex-direction:column;align-items:center;gap:1.2rem;padding:1.5rem 0">
     <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;justify-content:center"><div class="level-pills">${levelPills()}</div><span class="muted">${S.flashIdx + 1}/${pool.length}</span></div>
     <div class="fc-scene" id="fc"><div class="fc-inner ${S.flashFlipped ? 'flipped' : ''}">
@@ -3056,40 +3052,40 @@
     </div></div>
     <div style="display:flex;gap:0.6rem"><button class="btn" id="fprev">← Önceki</button><button class="btn btn-accent" id="fnext">Sonraki →</button></div>
   </div>`;
-  if (c.hanzi.length === 1 && document.getElementById('flash-stroke')) { renderStroke('flash-stroke', c.hanzi); }
-  document.getElementById('fc').addEventListener('click', () => { S.flashFlipped = !S.flashFlipped; renderFlash(); });
+      if (c.hanzi.length === 1 && document.getElementById('flash-stroke')) { renderStroke('flash-stroke', c.hanzi); }
+      document.getElementById('fc').addEventListener('click', () => { S.flashFlipped = !S.flashFlipped; renderFlash(); });
       document.getElementById('fprev').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx - 1 + pool.length) % pool.length; S.flashFlipped = false; renderFlash(); });
       document.getElementById('fnext').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx + 1) % pool.length; S.flashFlipped = false; renderFlash(); });
       ['fv1', 'fv2'].forEach(id => { const b = document.getElementById(id); if (b) b.addEventListener('click', e => { e.stopPropagation(); speak(c.hanzi, b); }); }); if (document.getElementById('fv_ex')) { const bex = document.getElementById('fv_ex'); bex.addEventListener('click', e => { e.stopPropagation(); speak(exs[0].cn, bex); }); }
-      
+
     }
 
     // ── SENTENCES ─────────────────────────────────────────────────
-    function initSent() { 
-  const s = SENTENCES[S.sentIdx]; 
-  let bl = s.blocks.map(w => ({w, isDecoy: false})); 
-  
-  // Add 1-2 random decoy words from vocabulary to make it harder
-  const numDecoys = Math.floor(Math.random() * 2) + 1;
-  const pool = S.words.length > 5 ? S.words : WORDS;
-  for(let i=0; i<numDecoys; i++) {
-    const decoy = pool[Math.floor(Math.random() * pool.length)].hanzi;
-    // only add if it's not already in the sentence
-    if (!s.cn.includes(decoy) && decoy.length > 0) {
-      bl.push({w: decoy, isDecoy: true});
-    }
-  }
+    function initSent() {
+      const s = SENTENCES[S.sentIdx];
+      let bl = s.blocks.map(w => ({ w, isDecoy: false }));
 
-  // Shuffle
-  for (let i = bl.length - 1; i > 0; i--) { 
-    const j = Math.floor(Math.random() * (i + 1));
-    [bl[i], bl[j]] = [bl[j], bl[i]]; 
-  } 
-  
-  S.sentAvail = bl; 
-  S.sentUser = []; 
-  S.sentStatus = 'idle'; 
-}
+      // Add 1-2 random decoy words from vocabulary to make it harder
+      const numDecoys = Math.floor(Math.random() * 2) + 1;
+      const pool = S.words.length > 5 ? S.words : WORDS;
+      for (let i = 0; i < numDecoys; i++) {
+        const decoy = pool[Math.floor(Math.random() * pool.length)].hanzi;
+        // only add if it's not already in the sentence
+        if (!s.cn.includes(decoy) && decoy.length > 0) {
+          bl.push({ w: decoy, isDecoy: true });
+        }
+      }
+
+      // Shuffle
+      for (let i = bl.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bl[i], bl[j]] = [bl[j], bl[i]];
+      }
+
+      S.sentAvail = bl;
+      S.sentUser = [];
+      S.sentStatus = 'idle';
+    }
     function renderSent() {
       if (!S.sentAvail.length && !S.sentUser.length) initSent();
       const s = SENTENCES[S.sentIdx];
@@ -3129,57 +3125,57 @@
         </div>
       </div>
     </div>`;
-      
-      document.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => { 
-        const i = +b.dataset.i, src = b.dataset.src; 
-        if (src === 'a') { 
-          S.sentUser.push(S.sentAvail.splice(i, 1)[0]); 
-        } else { 
-          S.sentAvail.push(S.sentUser.splice(i, 1)[0]); 
-        } 
-        S.sentStatus = 'idle'; 
-        renderSent(); 
+
+      document.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.i, src = b.dataset.src;
+        if (src === 'a') {
+          S.sentUser.push(S.sentAvail.splice(i, 1)[0]);
+        } else {
+          S.sentAvail.push(S.sentUser.splice(i, 1)[0]);
+        }
+        S.sentStatus = 'idle';
+        renderSent();
       }));
-      
-      document.getElementById('sc')?.addEventListener('click', () => { 
-        const uStr = S.sentUser.map(x=>x.w).join('');
+
+      document.getElementById('sc')?.addEventListener('click', () => {
+        const uStr = S.sentUser.map(x => x.w).join('');
         const cStr = s.blocks.join('');
-        S.sentStatus = uStr === cStr ? 'correct' : 'wrong'; 
-        if (S.sentStatus === 'correct') speak(s.cn); 
-        renderSent(); 
+        S.sentStatus = uStr === cStr ? 'correct' : 'wrong';
+        if (S.sentStatus === 'correct') speak(s.cn);
+        renderSent();
       });
       document.getElementById('sr')?.addEventListener('click', () => { S.sentAvail = []; S.sentUser = []; renderSent(); });
       document.getElementById('sl')?.addEventListener('click', () => speak(s.cn));
       document.getElementById('sn')?.addEventListener('click', () => { S.sentIdx = (S.sentIdx + 1) % SENTENCES.length; S.sentAvail = []; S.sentUser = []; renderSent(); });
-      
+
       document.getElementById('hint-btn')?.addEventListener('click', () => {
         // Find the first incorrect block or missing block
         const correctBlocks = s.blocks;
         let targetIndex = S.sentUser.length;
-        
+
         // If they already have blocks, check if they are correct so far
-        for (let i=0; i<S.sentUser.length; i++) {
+        for (let i = 0; i < S.sentUser.length; i++) {
           if (S.sentUser[i].w !== correctBlocks[i]) {
             targetIndex = i;
             break;
           }
         }
-        
+
         if (targetIndex < correctBlocks.length) {
           const neededWord = correctBlocks[targetIndex];
           // Find it in avail
           const idxInAvail = S.sentAvail.findIndex(x => x.w === neededWord && !x.isDecoy);
           if (idxInAvail !== -1) {
-             const block = S.sentAvail.splice(idxInAvail, 1)[0];
-             // If we are replacing a wrong block
-             if (targetIndex < S.sentUser.length) {
-                // Return all blocks from targetIndex onwards back to avail
-                const removed = S.sentUser.splice(targetIndex);
-                S.sentAvail.push(...removed);
-             }
-             S.sentUser.push(block);
-             S.sentStatus = 'idle';
-             renderSent();
+            const block = S.sentAvail.splice(idxInAvail, 1)[0];
+            // If we are replacing a wrong block
+            if (targetIndex < S.sentUser.length) {
+              // Return all blocks from targetIndex onwards back to avail
+              const removed = S.sentUser.splice(targetIndex);
+              S.sentAvail.push(...removed);
+            }
+            S.sentUser.push(block);
+            S.sentStatus = 'idle';
+            renderSent();
           }
         }
       });
@@ -3189,17 +3185,17 @@
     }
 
     // ── QUIZ ──────────────────────────────────────────────────────
-    function initQuiz() { 
-  const pool = S.words.length >= 4 ? S.words : WORDS; 
-  if (S.quizOrder.length !== pool.length) {
-    S.quizOrder = pool.map((_, i) => i).sort(() => 0.5 - Math.random());
-    S.quizIdx = 0;
-  }
-  const c = pool[S.quizOrder[S.quizIdx % pool.length]]; 
-  const w = pool.filter(x => x.hanzi !== c.hanzi).sort(() => 0.5 - Math.random()).slice(0, 3); 
-  S.quizOptions = [c, ...w].sort(() => 0.5 - Math.random()); 
-  S.quizAnswered = false; S.quizSelected = null; 
-}
+    function initQuiz() {
+      const pool = S.words.length >= 4 ? S.words : WORDS;
+      if (S.quizOrder.length !== pool.length) {
+        S.quizOrder = pool.map((_, i) => i).sort(() => 0.5 - Math.random());
+        S.quizIdx = 0;
+      }
+      const c = pool[S.quizOrder[S.quizIdx % pool.length]];
+      const w = pool.filter(x => x.hanzi !== c.hanzi).sort(() => 0.5 - Math.random()).slice(0, 3);
+      S.quizOptions = [c, ...w].sort(() => 0.5 - Math.random());
+      S.quizAnswered = false; S.quizSelected = null;
+    }
     function renderQuiz() {
       if (!S.quizOptions.length) initQuiz();
       const pool = S.words.length >= 4 ? S.words : WORDS, c = pool[S.quizIdx % pool.length];
@@ -3221,7 +3217,7 @@
       document.getElementById('qv')?.addEventListener('click', () => { const b = document.getElementById('qv'); speak(c.hanzi, b); });
       document.querySelectorAll('.qz-opt').forEach(b => b.addEventListener('click', () => { if (S.quizAnswered) return; S.quizSelected = S.quizOptions[+b.dataset.qi]; S.quizAnswered = true; const hit = S.quizSelected.hanzi === c.hanzi; S.quizScore.push(hit); if (hit) speak(c.hanzi, b); renderQuiz(); }));
       document.getElementById('qn')?.addEventListener('click', () => { S.quizIdx++; S.quizOptions = []; initQuiz(); renderQuiz(); });
-      
+
     }
 
     // ── ANKI ──────────────────────────────────────────────────────
