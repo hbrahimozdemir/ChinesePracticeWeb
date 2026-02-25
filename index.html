@@ -827,7 +827,27 @@
       color: var(--text2);
       flex: 1;
     }
+  
+    .stroke-box {
+      width: 155px; height: 155px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: crosshair;
+      margin-top: 0.5rem;
+      border-radius: 8px;
+    }
+    .pill[data-unit] {
+      border-color: rgba(232, 184, 75, 0.4);
+      color: var(--accent);
+    }
+    .pill[data-unit].active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
 </head>
 
 <body style="display:flex;flex-direction:column;min-height:100vh">
@@ -914,7 +934,7 @@
     //  STATE
     // ══════════════════════════════════════════════════════════════
     const S = {
-      tab: 'dictionary', hskLevel: 'all', words: [],
+      tab: 'dictionary', hskLevel: 'all', unitFilter: 'all', words: [],
       selected: null, graphSearch: '',
       flashIdx: 0, flashFlipped: false, flashOrder: [],
       quizIdx: 0, quizAnswered: false, quizSelected: null, quizScore: [], quizOptions: [], quizOrder: [],
@@ -937,7 +957,8 @@
       "很好",
       "好吃",
       "好看"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "你",
@@ -948,7 +969,8 @@
     "compounds": [
       "你好",
       "你们"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "我",
@@ -959,7 +981,8 @@
     "compounds": [
       "我们",
       "我的"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "叫",
@@ -969,7 +992,8 @@
     "hsk": 1,
     "compounds": [
       "叫门"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "是",
@@ -980,7 +1004,8 @@
     "compounds": [
       "是不是",
       "但是"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "人",
@@ -993,7 +1018,8 @@
       "外国人",
       "男人",
       "女人"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "中国",
@@ -1004,7 +1030,8 @@
     "compounds": [
       "中",
       "国"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "中",
@@ -1017,7 +1044,8 @@
       "中午",
       "中间",
       "中文"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "国",
@@ -1029,7 +1057,8 @@
       "中国",
       "外国",
       "国家"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "老师",
@@ -1040,7 +1069,8 @@
     "compounds": [
       "老",
       "师"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "学生",
@@ -1051,7 +1081,8 @@
     "compounds": [
       "学",
       "生"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "学",
@@ -1064,7 +1095,8 @@
       "学习",
       "学校",
       "大学"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "生",
@@ -1079,7 +1111,8 @@
       "生活",
       "女生",
       "男生"
-    ]
+    ],
+    "unit": 1
   },
   {
     "hanzi": "这",
@@ -1090,7 +1123,8 @@
     "compounds": [
       "这个",
       "这里"
-    ]
+    ],
+    "unit": 2
   },
   {
     "hanzi": "的",
@@ -1102,7 +1136,8 @@
       "我的",
       "你的",
       "好的"
-    ]
+    ],
+    "unit": 2
   },
   {
     "hanzi": "书",
@@ -1115,7 +1150,8 @@
       "书架",
       "看书",
       "图书馆"
-    ]
+    ],
+    "unit": 2
   },
   {
     "hanzi": "有",
@@ -1126,7 +1162,8 @@
     "compounds": [
       "没有",
       "有名"
-    ]
+    ],
+    "unit": 2
   },
   {
     "hanzi": "没",
@@ -1137,7 +1174,8 @@
     "compounds": [
       "没有",
       "没关系"
-    ]
+    ],
+    "unit": 2
   },
   {
     "hanzi": "没有",
@@ -1148,7 +1186,8 @@
     "compounds": [
       "没",
       "有"
-    ]
+    ],
+    "unit": 2
   },
   {
     "hanzi": "本",
@@ -1160,7 +1199,8 @@
       "日本",
       "本子",
       "书本"
-    ]
+    ],
+    "unit": 2
   },
   {
     "hanzi": "什么",
@@ -1171,7 +1211,8 @@
     "compounds": [
       "什么时候",
       "为什么"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "家",
@@ -1183,7 +1224,8 @@
       "全家",
       "大家",
       "回家"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "谁",
@@ -1191,7 +1233,8 @@
     "en": "who",
     "tr": "kim",
     "hsk": 1,
-    "compounds": []
+    "compounds": [],
+    "unit": 3
   },
   {
     "hanzi": "爸爸",
@@ -1201,7 +1244,8 @@
     "hsk": 1,
     "compounds": [
       "爸"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "妈妈",
@@ -1211,7 +1255,8 @@
     "hsk": 1,
     "compounds": [
       "妈"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "哥哥",
@@ -1221,7 +1266,8 @@
     "hsk": 1,
     "compounds": [
       "哥"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "弟弟",
@@ -1231,7 +1277,8 @@
     "hsk": 1,
     "compounds": [
       "弟"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "姐姐",
@@ -1241,7 +1288,8 @@
     "hsk": 1,
     "compounds": [
       "姐"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "妹妹",
@@ -1251,7 +1299,8 @@
     "hsk": 1,
     "compounds": [
       "妹"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "工作",
@@ -1261,7 +1310,8 @@
     "hsk": 1,
     "compounds": [
       "工人"
-    ]
+    ],
+    "unit": 3
   },
   {
     "hanzi": "学习",
@@ -1272,7 +1322,8 @@
     "compounds": [
       "学",
       "习"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "汉语",
@@ -1283,7 +1334,8 @@
     "compounds": [
       "汉",
       "语"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "语",
@@ -1295,7 +1347,8 @@
       "汉语",
       "英语",
       "语言"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "朋友",
@@ -1305,7 +1358,8 @@
     "hsk": 1,
     "compounds": [
       "好朋友"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "名字",
@@ -1316,7 +1370,8 @@
     "compounds": [
       "名",
       "字"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "哪",
@@ -1327,7 +1382,8 @@
     "compounds": [
       "哪儿",
       "哪个"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "外国",
@@ -1338,7 +1394,8 @@
     "compounds": [
       "外",
       "国"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "外",
@@ -1350,7 +1407,8 @@
       "外边",
       "外国",
       "外面"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "都",
@@ -1360,7 +1418,8 @@
     "hsk": 1,
     "compounds": [
       "都是"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "请",
@@ -1372,7 +1431,8 @@
       "请问",
       "请进",
       "请客"
-    ]
+    ],
+    "unit": 4
   },
   {
     "hanzi": "天",
@@ -1386,7 +1446,8 @@
       "昨天",
       "星期天",
       "天气"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "今天",
@@ -1397,7 +1458,8 @@
     "compounds": [
       "今",
       "天"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "明天",
@@ -1408,7 +1470,8 @@
     "compounds": [
       "明",
       "天"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "昨天",
@@ -1419,7 +1482,8 @@
     "compounds": [
       "昨",
       "天"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "生日",
@@ -1430,7 +1494,8 @@
     "compounds": [
       "生",
       "日"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "日",
@@ -1442,7 +1507,8 @@
       "生日",
       "日本",
       "日记"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "快乐",
@@ -1453,7 +1519,8 @@
     "compounds": [
       "快",
       "乐"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "谢谢",
@@ -1463,7 +1530,8 @@
     "hsk": 1,
     "compounds": [
       "不用谢"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "月",
@@ -1475,7 +1543,8 @@
       "一月",
       "二月",
       "几个月"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "星期",
@@ -1487,7 +1556,8 @@
       "星",
       "期",
       "星期天"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "很",
@@ -1499,7 +1569,8 @@
       "很好",
       "很高兴",
       "很大"
-    ]
+    ],
+    "unit": 5
   },
   {
     "hanzi": "现在",
@@ -1510,7 +1581,8 @@
     "compounds": [
       "现",
       "在"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "点",
@@ -1521,7 +1593,8 @@
     "compounds": [
       "几点",
       "一点儿"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "分",
@@ -1531,7 +1604,8 @@
     "hsk": 1,
     "compounds": [
       "分钟"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "早上",
@@ -1542,7 +1616,8 @@
     "compounds": [
       "早",
       "上"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "晚上",
@@ -1553,7 +1628,8 @@
     "compounds": [
       "晚",
       "上"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "上午",
@@ -1564,7 +1640,8 @@
     "compounds": [
       "上",
       "午"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "下午",
@@ -1575,7 +1652,8 @@
     "compounds": [
       "下",
       "午"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "中午",
@@ -1586,7 +1664,8 @@
     "compounds": [
       "中",
       "午"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "上",
@@ -1599,7 +1678,8 @@
       "上边",
       "上课",
       "上班"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "下",
@@ -1612,7 +1692,8 @@
       "下边",
       "下课",
       "下雨"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "午",
@@ -1624,7 +1705,8 @@
       "上午",
       "中午",
       "下午"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "课",
@@ -1635,7 +1717,8 @@
     "compounds": [
       "上课",
       "下课"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "半",
@@ -1646,7 +1729,8 @@
     "compounds": [
       "一半",
       "半个"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "睡觉",
@@ -1657,7 +1741,8 @@
     "compounds": [
       "睡",
       "觉"
-    ]
+    ],
+    "unit": 6
   },
   {
     "hanzi": "银行",
@@ -1668,7 +1753,8 @@
     "compounds": [
       "银",
       "行"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "在",
@@ -1679,7 +1765,8 @@
     "compounds": [
       "现在",
       "在家"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "哪儿",
@@ -1689,7 +1776,8 @@
     "hsk": 1,
     "compounds": [
       "哪"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "边",
@@ -1707,7 +1795,8 @@
       "上边",
       "下边",
       "旁边"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "东",
@@ -1718,7 +1807,8 @@
     "compounds": [
       "东边",
       "东西"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "西",
@@ -1729,7 +1819,8 @@
     "compounds": [
       "西边",
       "东西"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "南",
@@ -1739,7 +1830,8 @@
     "hsk": 1,
     "compounds": [
       "南边"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "北",
@@ -1750,7 +1842,8 @@
     "compounds": [
       "北边",
       "北京"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "前",
@@ -1761,7 +1854,8 @@
     "compounds": [
       "前边",
       "以前"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "后",
@@ -1772,7 +1866,8 @@
     "compounds": [
       "后边",
       "以后"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "地方",
@@ -1783,7 +1878,8 @@
     "compounds": [
       "地",
       "方"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "学校",
@@ -1794,7 +1890,8 @@
     "compounds": [
       "学",
       "校"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "房间",
@@ -1805,7 +1902,8 @@
     "compounds": [
       "房",
       "间"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "间",
@@ -1817,7 +1915,8 @@
       "房间",
       "中间",
       "时间"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "里",
@@ -1828,7 +1927,8 @@
     "compounds": [
       "里边",
       "家里"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "桌子",
@@ -1838,7 +1938,8 @@
     "hsk": 1,
     "compounds": [
       "桌"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "旁边",
@@ -1849,7 +1950,8 @@
     "compounds": [
       "旁",
       "边"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "中间",
@@ -1860,7 +1962,8 @@
     "compounds": [
       "中",
       "间"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "或者",
@@ -1871,7 +1974,8 @@
     "compounds": [
       "或",
       "者"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "图书馆",
@@ -1883,7 +1987,8 @@
       "图",
       "书",
       "馆"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "写",
@@ -1894,7 +1999,8 @@
     "compounds": [
       "写信",
       "写字"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "信",
@@ -1904,7 +2010,8 @@
     "hsk": 1,
     "compounds": [
       "写信"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "同屋",
@@ -1916,7 +2023,8 @@
       "同",
       "屋",
       "同学"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "常常",
@@ -1926,7 +2034,8 @@
     "hsk": 2,
     "compounds": [
       "常"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "电视",
@@ -1938,7 +2047,8 @@
       "电",
       "视",
       "看电视"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "聊天儿",
@@ -1949,7 +2059,8 @@
     "compounds": [
       "聊",
       "天"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "食堂",
@@ -1960,7 +2071,8 @@
     "compounds": [
       "食",
       "堂"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "去",
@@ -1971,7 +2083,8 @@
     "compounds": [
       "去年",
       "进去"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "来",
@@ -1982,7 +2095,8 @@
     "compounds": [
       "回来",
       "出来"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "买",
@@ -1992,7 +2106,8 @@
     "hsk": 1,
     "compounds": [
       "买东西"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "卖",
@@ -2002,7 +2117,8 @@
     "hsk": 1,
     "compounds": [
       "买卖"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "东西",
@@ -2014,7 +2130,8 @@
       "东",
       "西",
       "买东西"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "苹果",
@@ -2025,7 +2142,8 @@
     "compounds": [
       "果",
       "水果"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "钱",
@@ -2036,7 +2154,8 @@
     "compounds": [
       "多少钱",
       "有钱"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "贵",
@@ -2046,7 +2165,8 @@
     "hsk": 2,
     "compounds": [
       "太贵了"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "便宜",
@@ -2057,7 +2177,8 @@
     "compounds": [
       "便",
       "宜"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "吃",
@@ -2068,7 +2189,8 @@
     "compounds": [
       "吃饭",
       "好吃"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "饭",
@@ -2080,7 +2202,8 @@
       "吃饭",
       "米饭",
       "早饭"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "喝",
@@ -2091,7 +2214,8 @@
     "compounds": [
       "喝水",
       "喝茶"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "水",
@@ -2102,7 +2226,8 @@
     "compounds": [
       "喝水",
       "水果"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "茶",
@@ -2112,7 +2237,8 @@
     "hsk": 1,
     "compounds": [
       "喝茶"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "喜欢",
@@ -2123,7 +2249,8 @@
     "compounds": [
       "喜",
       "欢"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "看",
@@ -2135,7 +2262,8 @@
       "看见",
       "看书",
       "看电视"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "听",
@@ -2146,7 +2274,8 @@
     "compounds": [
       "听音乐",
       "听说"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "音乐",
@@ -2158,7 +2287,8 @@
       "音",
       "乐",
       "听音乐"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "大",
@@ -2169,7 +2299,8 @@
     "compounds": [
       "大学",
       "大家"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "小",
@@ -2180,7 +2311,8 @@
     "compounds": [
       "小学",
       "小时"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "多",
@@ -2191,7 +2323,8 @@
     "compounds": [
       "多少",
       "很多"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "少",
@@ -2202,7 +2335,8 @@
     "compounds": [
       "多少",
       "很少"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "天气",
@@ -2213,7 +2347,8 @@
     "compounds": [
       "天",
       "气"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "冷",
@@ -2223,7 +2358,8 @@
     "hsk": 1,
     "compounds": [
       "很冷"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "热",
@@ -2233,7 +2369,8 @@
     "hsk": 1,
     "compounds": [
       "很热"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "下雨",
@@ -2244,7 +2381,8 @@
     "compounds": [
       "下",
       "雨"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "做",
@@ -2255,7 +2393,8 @@
     "compounds": [
       "做饭",
       "做事"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "运动",
@@ -2266,7 +2405,8 @@
     "compounds": [
       "运",
       "动"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "想",
@@ -2276,7 +2416,8 @@
     "hsk": 1,
     "compounds": [
       "想法"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "要",
@@ -2286,7 +2427,8 @@
     "hsk": 1,
     "compounds": [
       "不要"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "会",
@@ -2297,7 +2439,8 @@
     "compounds": [
       "不会",
       "开会"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "能",
@@ -2307,7 +2450,8 @@
     "hsk": 1,
     "compounds": [
       "不能"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "认识",
@@ -2318,7 +2462,8 @@
     "compounds": [
       "认",
       "识"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "觉得",
@@ -2329,7 +2474,8 @@
     "compounds": [
       "觉",
       "得"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "块",
@@ -2339,7 +2485,8 @@
     "hsk": 1,
     "compounds": [
       "一块儿"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "漂亮",
@@ -2350,7 +2497,8 @@
     "compounds": [
       "漂",
       "亮"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "太",
@@ -2361,7 +2509,8 @@
     "compounds": [
       "太好了",
       "太太"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "了",
@@ -2372,7 +2521,8 @@
     "compounds": [
       "太好了",
       "吃饭了"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "吗",
@@ -2383,7 +2533,8 @@
     "compounds": [
       "好吗",
       "是吗"
-    ]
+    ],
+    "unit": 7
   },
   {
     "hanzi": "呢",
@@ -2393,7 +2544,8 @@
     "hsk": 1,
     "compounds": [
       "你呢"
-    ]
+    ],
+    "unit": 7
   }
 ];
 
@@ -2649,9 +2801,15 @@
     //  FILTER
     // ══════════════════════════════════════════════════════════════
     function filterWords() {
-      const l = S.hskLevel;
-      S.words = l === 'all' ? WORDS : l === '1-2' ? WORDS.filter(w => w.hsk <= 2) : l === '3-4' ? WORDS.filter(w => w.hsk >= 3 && w.hsk <= 4) : WORDS.filter(w => w.hsk >= 5);
-    }
+  const l = S.hskLevel;
+  const u = S.unitFilter || 'all';
+  let filtered = l === 'all' ? WORDS : l === '1-2' ? WORDS.filter(w => w.hsk <= 2) : l === '3-4' ? WORDS.filter(w => w.hsk >= 3 && w.hsk <= 4) : WORDS.filter(w => w.hsk >= 5);
+  
+  if (u !== 'all') {
+    filtered = filtered.filter(w => w.unit == u || (u==7 && w.unit==8)); // 7 & 8 are combined usually
+  }
+  S.words = filtered;
+}
 
     // ══════════════════════════════════════════════════════════════
     //  D3 GRAPH
@@ -2730,7 +2888,21 @@
     //  RENDER
     // ══════════════════════════════════════════════════════════════
     function render() {
-      document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === S.tab));
+      document.addEventListener('click', e => {
+      const p = e.target.closest('.pill');
+      if (p) {
+        if (p.dataset.level) S.hskLevel = p.dataset.level;
+        if (p.dataset.unit) S.unitFilter = p.dataset.unit;
+        S.flashIdx = 0; S.flashFlipped = false; S.flashOrder = [];
+        S.quizIdx = 0; S.quizScore = []; S.quizOptions = []; S.quizOrder = [];
+        filterWords(); 
+        if (S.tab === 'dictionary') { renderDict(); renderGraph(S.selected); }
+        if (S.tab === 'flashcards') { renderFlash(); }
+        if (S.tab === 'quiz') { initQuiz(); renderQuiz(); }
+      }
+    });
+
+    document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === S.tab));
       if (S.tab === 'dictionary') renderDict();
       else if (S.tab === 'flashcards') renderFlash();
       else if (S.tab === 'sentences') renderSent();
@@ -2739,10 +2911,36 @@
     }
 
     function levelPills() {
-      return ['all', '1-2', '3-4', '5-6'].map(l => `<button class="pill ${S.hskLevel === l ? 'active' : ''}" data-level="${l}">${l === 'all' ? 'Tümü' : 'HSK ' + l}</button>`).join('');
+  const hsk = ['all', '1-2', '3-4', '5-6'].map(l => `<button class="pill ${S.hskLevel === l ? 'active' : ''}" data-level="${l}">${l === 'all' ? 'Tümü' : 'HSK ' + l}</button>`).join('');
+  let unitsHtml = '';
+  if (S.tab === 'flashcards' || S.tab === 'dictionary' || S.tab === 'quiz') {
+    const units = [1,2,3,4,5,6,7,8,9];
+    unitsHtml = '<div style="width:100%; height:4px"></div>' + '<button class="pill ' + (S.unitFilter === 'all' ? 'active' : '') + '" data-unit="all">Tüm Üniteler</button>' + 
+      units.map(u => `<button class="pill ${S.unitFilter == u ? 'active' : ''}" data-unit="${u}">Ünite ${u}</button>`).join('');
+  }
+  return hsk + unitsHtml;
+}" data-level="${l}">${l === 'all' ? 'Tümü' : 'HSK ' + l}</button>`).join('');
     }
 
     // ── DICTIONARY ────────────────────────────────────────────────
+    let hwWriter = null;
+    function renderStroke(boxId, hanzi) {
+      const box = document.getElementById(boxId);
+      if (!box || !hanzi) return;
+      box.innerHTML = '';
+      try {
+        hwWriter = HanziWriter.create(boxId, hanzi[0], {
+          width: 140, height: 140,
+          padding: 5,
+          strokeAnimationSpeed: 1.5,
+          delayBetweenStrokes: 200,
+          strokeColor: '#e8b84b',
+          radicalColor: '#4caf7d',
+          outlineColor: '#2e2e38'
+        });
+        hwWriter.loopCharacterAnimation();
+      } catch(e) { console.error('HanziWriter err', e); }
+    }
     function renderDict() {
       const f = S.words.filter(w => { const q = S.graphSearch.toLowerCase().trim(); return !q || w.hanzi.includes(q) || w.pinyin.toLowerCase().includes(q) || (w.tr || '').toLowerCase().includes(q) || (w.en || '').toLowerCase().includes(q); }).slice(0, 120);
       document.getElementById('main').innerHTML = `
@@ -2774,7 +2972,7 @@
         if (q) { const w = S.words.find(x => x.hanzi === q) || S.words.find(x => x.hanzi.includes(q) || x.pinyin.toLowerCase().includes(q)); if (w) S.selected = w; }
         renderDict(); renderGraph(S.selected);
       });
-      document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => { S.hskLevel = p.dataset.level; filterWords(); renderDict(); renderGraph(S.selected); }));
+      
       document.querySelectorAll('.word-row').forEach(r => r.addEventListener('click', () => { S.selected = WORDS.find(x => x.hanzi === r.dataset.h); renderDict(); renderGraph(S.selected); }));
       bindDet(); setTimeout(() => renderGraph(S.selected), 40);
     }
@@ -2793,7 +2991,7 @@
           </a>
         </div>`;
       return `<div style="display:flex;flex-direction:column;align-items:center;gap:1rem" class="fade-in">
-    <div class="char-box"><div class="hanzi-xl">${w.hanzi}</div></div>
+    ${w.hanzi.length === 1 ? `<div class="stroke-box" id="dict-stroke" title="Tekrar oynat / Quiz için tıkla"></div>` : `<div class="char-box"><div class="hanzi-xl">${w.hanzi}</div></div>`}
     <button class="vol-btn" id="vmain">🔊</button>
     <div style="text-align:center">
       <div class="pinyin-big">${w.pinyin}</div>
@@ -2811,6 +3009,10 @@
   </div>`;
     }
     function bindDet() {
+      if (S.selected && S.selected.hanzi.length === 1 && document.getElementById('dict-stroke')) {
+        renderStroke('dict-stroke', S.selected.hanzi);
+        document.getElementById('dict-stroke').addEventListener('click', () => hwWriter && hwWriter.quiz());
+      }
       const vm = document.getElementById('vmain'); if (vm) vm.addEventListener('click', () => speak(S.selected?.hanzi, vm));
       document.querySelectorAll('[data-speak]').forEach(b => b.addEventListener('click', () => speak(b.dataset.speak, b)));
       document.querySelectorAll('.compound-btn').forEach(b => b.addEventListener('click', () => { const w = WORDS.find(x => x.hanzi === b.dataset.h); if (w) { S.selected = w; renderGraph(w); document.getElementById('det').innerHTML = detHTML(); bindDet(); updWL(); } }));
@@ -2836,7 +3038,7 @@
     <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;justify-content:center"><div class="level-pills">${levelPills()}</div><span class="muted">${S.flashIdx + 1}/${pool.length}</span></div>
     <div class="fc-scene" id="fc"><div class="fc-inner ${S.flashFlipped ? 'flipped' : ''}">
       <div class="fc-face fc-front">
-        <div style="font-family:'Noto Serif SC',serif;font-size:4.8rem;line-height:1;color:var(--accent)">${c.hanzi}</div>
+        ${c.hanzi.length === 1 ? `<div class="stroke-box" id="flash-stroke" style="margin-bottom:0.8rem; border-color:transparent; background:transparent"></div>` : `<div style="font-family:'Noto Serif SC',serif;font-size:4.8rem;line-height:1;color:var(--accent)">${c.hanzi}</div>`}
         <button class="vol-btn" id="fv1">🔊</button>
         <div class="muted" style="font-size:0.58rem">tıkla → çevir</div>
       </div>
@@ -2854,48 +3056,134 @@
     </div></div>
     <div style="display:flex;gap:0.6rem"><button class="btn" id="fprev">← Önceki</button><button class="btn btn-accent" id="fnext">Sonraki →</button></div>
   </div>`;
+  if (c.hanzi.length === 1 && document.getElementById('flash-stroke')) { renderStroke('flash-stroke', c.hanzi); }
   document.getElementById('fc').addEventListener('click', () => { S.flashFlipped = !S.flashFlipped; renderFlash(); });
       document.getElementById('fprev').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx - 1 + pool.length) % pool.length; S.flashFlipped = false; renderFlash(); });
       document.getElementById('fnext').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx + 1) % pool.length; S.flashFlipped = false; renderFlash(); });
       ['fv1', 'fv2'].forEach(id => { const b = document.getElementById(id); if (b) b.addEventListener('click', e => { e.stopPropagation(); speak(c.hanzi, b); }); }); if (document.getElementById('fv_ex')) { const bex = document.getElementById('fv_ex'); bex.addEventListener('click', e => { e.stopPropagation(); speak(exs[0].cn, bex); }); }
-      document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => { S.hskLevel = p.dataset.level; S.flashIdx = 0; S.flashFlipped = false; S.flashOrder = []; filterWords(); renderFlash(); }));
+      
     }
 
     // ── SENTENCES ─────────────────────────────────────────────────
-    function initSent() { const s = SENTENCES[S.sentIdx]; const bl = [...s.blocks]; for (let i = bl.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[bl[i], bl[j]] = [bl[j], bl[i]]; } S.sentAvail = bl; S.sentUser = []; S.sentStatus = 'idle'; }
+    function initSent() { 
+  const s = SENTENCES[S.sentIdx]; 
+  let bl = s.blocks.map(w => ({w, isDecoy: false})); 
+  
+  // Add 1-2 random decoy words from vocabulary to make it harder
+  const numDecoys = Math.floor(Math.random() * 2) + 1;
+  const pool = S.words.length > 5 ? S.words : WORDS;
+  for(let i=0; i<numDecoys; i++) {
+    const decoy = pool[Math.floor(Math.random() * pool.length)].hanzi;
+    // only add if it's not already in the sentence
+    if (!s.cn.includes(decoy) && decoy.length > 0) {
+      bl.push({w: decoy, isDecoy: true});
+    }
+  }
+
+  // Shuffle
+  for (let i = bl.length - 1; i > 0; i--) { 
+    const j = Math.floor(Math.random() * (i + 1));
+    [bl[i], bl[j]] = [bl[j], bl[i]]; 
+  } 
+  
+  S.sentAvail = bl; 
+  S.sentUser = []; 
+  S.sentStatus = 'idle'; 
+}
     function renderSent() {
       if (!S.sentAvail.length && !S.sentUser.length) initSent();
       const s = SENTENCES[S.sentIdx];
       document.getElementById('main').innerHTML = `
     <div style="max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:1.15rem">
       <div class="card">
-        <div style="text-align:center;margin-bottom:1.2rem">
+        <div style="text-align:center;margin-bottom:1.2rem;position:relative">
           <div class="muted" style="font-size:0.58rem;letter-spacing:3px;margin-bottom:0.42rem">TÜRKÇEDEN ÇİNCEYE</div>
-          <div style="font-size:1.3rem;color:var(--text)">${s.tr}</div>
-          <div class="muted" style="margin-top:0.22rem">${S.sentIdx + 1}/${SENTENCES.length}</div>
+          <div style="font-size:1.4rem;color:var(--text);line-height:1.4">${s.tr}</div>
+          <div class="muted" style="margin-top:0.42rem">${S.sentIdx + 1}/${SENTENCES.length}</div>
+          ${S.sentStatus !== 'correct' ? `<button class="btn btn-sm" id="hint-btn" style="position:absolute;right:0;top:0" title="İpucu Ver">💡 İpucu</button>` : ''}
         </div>
+        
         <div class="blocks-area ${S.sentStatus}" id="drop">
-          ${!S.sentUser.length ? `<span class="muted">Kelimeleri sırala...</span>` : ''}
-          ${S.sentUser.map((b, i) => `<button class="block-btn placed" data-i="${i}" data-src="u">${b}</button>`).join('')}
+          ${!S.sentUser.length ? `<span class="muted">Kelimeleri sıraya koy...</span>` : ''}
+          ${S.sentUser.map((b, i) => `<button class="block-btn placed" data-i="${i}" data-src="u">${b.w}</button>`).join('')}
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:0.42rem;justify-content:center;margin:0.85rem 0">
-          ${S.sentAvail.map((b, i) => `<button class="block-btn" data-i="${i}" data-src="a">${b}</button>`).join('')}
+        
+        <div style="display:flex;flex-wrap:wrap;gap:0.42rem;justify-content:center;margin:0.85rem 0; min-height: 50px;">
+          ${S.sentAvail.map((b, i) => `<button class="block-btn" data-i="${i}" data-src="a">${b.w}</button>`).join('')}
         </div>
-        <div style="display:flex;gap:0.6rem;justify-content:center">
-          ${S.sentStatus === 'correct' ? `<button class="btn" id="sl">🔊 Dinle</button><button class="btn btn-accent" id="sn">Sonraki →</button>` : `<button class="btn btn-accent" id="sc">✓ Kontrol</button><button class="btn btn-sm" id="sr">↺</button>`}
+        
+        <div style="display:flex;gap:0.6rem;justify-content:center;margin-top:1rem">
+          ${S.sentStatus === 'correct' ? `<button class="btn" id="sl">🔊 Dinle</button><button class="btn btn-accent" id="sn">Sonraki →</button>` : `<button class="btn btn-accent" id="sc">✓ Kontrol Et</button><button class="btn btn-sm" id="sr" title="Sıfırla">↺</button>`}
         </div>
-        ${S.sentStatus === 'correct' ? `<div style="text-align:center;margin-top:0.7rem;color:var(--green);font-size:0.82rem">✓ Doğru!</div><div style="text-align:center;color:var(--accent);font-size:0.7rem;margin-top:0.18rem">${s.py}</div>` : S.sentStatus === 'wrong' ? `<div style="text-align:center;margin-top:0.7rem;color:var(--red);font-size:0.78rem">✗ Yanlış, tekrar dene</div>` : ''}
+        
+        ${S.sentStatus === 'correct' ? `<div style="text-align:center;margin-top:0.85rem;color:var(--green);font-size:0.9rem;font-weight:bold">✓ Harika! Doğru sıralama.</div><div style="text-align:center;color:var(--accent);font-size:0.8rem;margin-top:0.3rem">${s.py}</div><div style="text-align:center;color:var(--text);font-family:'Noto Serif SC',serif;font-size:1.2rem;margin-top:0.3rem">${s.cn}</div>` : S.sentStatus === 'wrong' ? `<div style="text-align:center;margin-top:0.85rem;color:var(--red);font-size:0.85rem">✗ Yanlış sıralama, tekrar dene</div>` : ''}
       </div>
+      
       <div class="card" style="padding:0.85rem">
-        <div class="muted" style="font-size:0.58rem;letter-spacing:2px;margin-bottom:0.6rem">TÜM CÜMLELER</div>
-        ${SENTENCES.map((sen, i) => `<div class="word-row ${i === S.sentIdx ? 'selected' : ''}" data-si="${i}" style="padding:0.42rem 0.55rem"><span class="muted" style="min-width:1.2rem;font-size:0.58rem">${i + 1}</span><span style="font-family:'Noto Serif SC',serif;color:var(--text)">${sen.cn}</span><span class="muted" style="flex:1;padding-left:0.38rem">${sen.tr}</span><button class="vol-btn" style="width:25px;height:25px;font-size:0.68rem" data-speak="${sen.cn}">🔊</button></div>`).join('')}
+        <div class="muted" style="font-size:0.58rem;letter-spacing:2px;margin-bottom:0.6rem;display:flex;justify-content:space-between">
+          <span>TÜM CÜMLELER</span>
+          <span style="color:var(--accent)">${SENTENCES.length} Cümle</span>
+        </div>
+        <div style="max-height: 400px; overflow-y: auto;">
+          ${SENTENCES.map((sen, i) => `<div class="word-row ${i === S.sentIdx ? 'selected' : ''}" data-si="${i}" style="padding:0.42rem 0.55rem"><span class="muted" style="min-width:1.2rem;font-size:0.58rem">${i + 1}</span><span style="font-family:'Noto Serif SC',serif;color:var(--text);font-size:1rem;">${sen.cn}</span><span class="muted" style="flex:1;padding-left:0.5rem;font-size:0.75rem">${sen.tr}</span><button class="vol-btn" style="width:25px;height:25px;font-size:0.68rem" data-speak="${sen.cn}">🔊</button></div>`).join('')}
+        </div>
       </div>
     </div>`;
-      document.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => { const i = +b.dataset.i, src = b.dataset.src; if (src === 'a') { S.sentUser.push(S.sentAvail.splice(i, 1)[0]); } else { S.sentAvail.push(S.sentUser.splice(i, 1)[0]); } S.sentStatus = 'idle'; renderSent(); }));
-      document.getElementById('sc')?.addEventListener('click', () => { S.sentStatus = s.blocks.join('') === S.sentUser.join('') ? 'correct' : 'wrong'; if (S.sentStatus === 'correct') speak(s.cn); renderSent(); });
+      
+      document.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => { 
+        const i = +b.dataset.i, src = b.dataset.src; 
+        if (src === 'a') { 
+          S.sentUser.push(S.sentAvail.splice(i, 1)[0]); 
+        } else { 
+          S.sentAvail.push(S.sentUser.splice(i, 1)[0]); 
+        } 
+        S.sentStatus = 'idle'; 
+        renderSent(); 
+      }));
+      
+      document.getElementById('sc')?.addEventListener('click', () => { 
+        const uStr = S.sentUser.map(x=>x.w).join('');
+        const cStr = s.blocks.join('');
+        S.sentStatus = uStr === cStr ? 'correct' : 'wrong'; 
+        if (S.sentStatus === 'correct') speak(s.cn); 
+        renderSent(); 
+      });
       document.getElementById('sr')?.addEventListener('click', () => { S.sentAvail = []; S.sentUser = []; renderSent(); });
       document.getElementById('sl')?.addEventListener('click', () => speak(s.cn));
       document.getElementById('sn')?.addEventListener('click', () => { S.sentIdx = (S.sentIdx + 1) % SENTENCES.length; S.sentAvail = []; S.sentUser = []; renderSent(); });
+      
+      document.getElementById('hint-btn')?.addEventListener('click', () => {
+        // Find the first incorrect block or missing block
+        const correctBlocks = s.blocks;
+        let targetIndex = S.sentUser.length;
+        
+        // If they already have blocks, check if they are correct so far
+        for (let i=0; i<S.sentUser.length; i++) {
+          if (S.sentUser[i].w !== correctBlocks[i]) {
+            targetIndex = i;
+            break;
+          }
+        }
+        
+        if (targetIndex < correctBlocks.length) {
+          const neededWord = correctBlocks[targetIndex];
+          // Find it in avail
+          const idxInAvail = S.sentAvail.findIndex(x => x.w === neededWord && !x.isDecoy);
+          if (idxInAvail !== -1) {
+             const block = S.sentAvail.splice(idxInAvail, 1)[0];
+             // If we are replacing a wrong block
+             if (targetIndex < S.sentUser.length) {
+                // Return all blocks from targetIndex onwards back to avail
+                const removed = S.sentUser.splice(targetIndex);
+                S.sentAvail.push(...removed);
+             }
+             S.sentUser.push(block);
+             S.sentStatus = 'idle';
+             renderSent();
+          }
+        }
+      });
+
       document.querySelectorAll('[data-si]').forEach(r => r.addEventListener('click', e => { if (e.target.dataset.speak) return; S.sentIdx = +r.dataset.si; S.sentAvail = []; S.sentUser = []; renderSent(); }));
       document.querySelectorAll('[data-speak]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); speak(b.dataset.speak, b); }));
     }
@@ -2933,7 +3221,7 @@
       document.getElementById('qv')?.addEventListener('click', () => { const b = document.getElementById('qv'); speak(c.hanzi, b); });
       document.querySelectorAll('.qz-opt').forEach(b => b.addEventListener('click', () => { if (S.quizAnswered) return; S.quizSelected = S.quizOptions[+b.dataset.qi]; S.quizAnswered = true; const hit = S.quizSelected.hanzi === c.hanzi; S.quizScore.push(hit); if (hit) speak(c.hanzi, b); renderQuiz(); }));
       document.getElementById('qn')?.addEventListener('click', () => { S.quizIdx++; S.quizOptions = []; initQuiz(); renderQuiz(); });
-      document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => { S.hskLevel = p.dataset.level; S.quizIdx = 0; S.quizScore = []; S.quizOptions = []; S.quizOrder = []; filterWords(); initQuiz(); renderQuiz(); }));
+      
     }
 
     // ── ANKI ──────────────────────────────────────────────────────
