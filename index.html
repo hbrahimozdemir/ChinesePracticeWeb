@@ -938,7 +938,7 @@
     // ══════════════════════════════════════════════════════════════
     const S = {
       tab: 'dictionary', hskLevel: 'all', unitFilter: 'all', words: [],
-      selected: null, graphSearch: '',
+      selected: null, graphSearch: '', showUnitLinks: false, quizMode: 'hanzi', quizCorrect: null, quizMeaningShown: false,
       flashIdx: 0, flashFlipped: false, flashOrder: [],
       quizIdx: 0, quizAnswered: false, quizSelected: null, quizScore: [], quizOptions: [], quizOrder: [],
       sentIdx: 0, sentUser: [], sentAvail: [], sentStatus: 'idle',
@@ -3696,15 +3696,13 @@
         }
       });
 
-      // 4️⃣ Same-unit context connections (same lesson = likely related semantically)
-      // Limit to 5 to avoid cluttering, pick alphabetically closest
-      const unitNeighbors = WORDS
-        .filter(w => w.unit === center.unit && w.hanzi !== center.hanzi && !seen.has(w.hanzi))
-        .slice(0, 5);
-      unitNeighbors.forEach(w => {
-        add(w, false, 'unit');
-        links.push({ source: center.hanzi, target: w.hanzi, ltype: 'unit' });
-      });
+      // 4️⃣ Same-unit context connections (toggle)
+      if (S.showUnitLinks) {
+        WORDS.filter(w => w.unit === center.unit && w.hanzi !== center.hanzi && !seen.has(w.hanzi)).slice(0, 5).forEach(w => {
+          add(w, false, 'unit');
+          links.push({ source: center.hanzi, target: w.hanzi, ltype: 'unit' });
+        });
+      }
 
       return { nodes, links };
     }
@@ -3860,7 +3858,8 @@
         <div id="graph-container"></div>
         <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.35rem;flex-wrap:wrap">
           <p class="muted" style="font-size:0.58rem">Sürükle · Scroll=zoom · Node'a tıkla=gez</p>
-          <span class="muted" style="font-size:0.55rem">│ <span style="color:rgba(16,185,129,0.8)">●</span> ortak karakter · <span style="color:rgba(59,130,246,0.8)">●</span> aynı ders</span>
+          <span class="muted" style="font-size:0.55rem">│ <span style="color:rgba(16,185,129,0.8)">●</span> ortak karakter</span>
+          <button id="unit-toggle-btn" class="btn btn-sm" style="font-size:0.55rem;padding:0.18rem 0.5rem;${S.showUnitLinks ? 'border-color:rgba(59,130,246,0.8);color:rgba(59,130,246,0.9)' : ''}" onclick="S.showUnitLinks=!S.showUnitLinks;renderGraph(S.selected);">${S.showUnitLinks ? '<span style=\"color:rgba(59,130,246,0.9)\">●</span> Aynı Ders: AÇIK' : '● Aynı Ders: KAPALI'}</button>
           ${S.selected ? `<button id="mdbg-enrich-btn" class="btn btn-sm" style="font-size:0.55rem;padding:0.18rem 0.5rem" onclick="enrichGraphFromMDBG(S.selected)">🌐 mdbg.net bağlantıları</button>` : ''}
         </div>
       </div>
@@ -4138,38 +4137,91 @@
 
     // ── QUIZ ──────────────────────────────────────────────────────
     function initQuiz() {
-      const pool = S.words.length >= 4 ? S.words : WORDS;
+      const pool = (S.words.length >= 4 ? S.words : WORDS);
       if (S.quizOrder.length !== pool.length) {
         S.quizOrder = pool.map((_, i) => i).sort(() => 0.5 - Math.random());
         S.quizIdx = 0;
       }
       const c = pool[S.quizOrder[S.quizIdx % pool.length]];
-      const w = pool.filter(x => x.hanzi !== c.hanzi).sort(() => 0.5 - Math.random()).slice(0, 3);
-      S.quizOptions = [c, ...w].sort(() => 0.5 - Math.random());
-      S.quizAnswered = false; S.quizSelected = null;
+      S.quizCorrect = c; // store correct answer in state – used by renderQuiz
+      // 3 wrong options different from correct on the active field
+      const filterFn = S.quizMode === 'pinyin'
+        ? x => x.pinyin !== c.pinyin
+        : x => x.hanzi  !== c.hanzi;
+      const wrongs = pool.filter(filterFn).sort(() => 0.5 - Math.random()).slice(0, 3);
+      S.quizOptions = [c, ...wrongs].sort(() => 0.5 - Math.random());
+      S.quizAnswered = false; S.quizSelected = null; S.quizMeaningShown = false;
     }
     function renderQuiz() {
-      if (!S.quizOptions.length) initQuiz();
-      const pool = S.words.length >= 4 ? S.words : WORDS, c = pool[S.quizIdx % pool.length];
+      if (!S.quizOptions.length || !S.quizCorrect) initQuiz();
+      const c = S.quizCorrect; // always use the stored correct answer
+      const isPinyin = S.quizMode === 'pinyin';
+
+      // Question shows: hanzi mode → show pinyin; pinyin mode → show hanzi
+      const questionHtml = isPinyin
+        ? `<div style="font-family:'Noto Serif SC',serif;font-size:3rem;letter-spacing:4px;color:var(--text)">${c.hanzi}</div>`
+        : `<div style="font-size:1.6rem;color:var(--accent);font-family:'Space Mono',monospace;letter-spacing:2px">${c.pinyin}</div>`;
+
+      // Options show the OTHER field
+      const optLabel = isPinyin
+        ? (opt) => `<span style="font-size:0.85rem;letter-spacing:1px">${opt.pinyin}</span>`
+        : (opt) => `<span style="font-family:'Noto Serif SC',serif;font-size:1.5rem">${opt.hanzi}</span>`;
+
+      // Correct check
+      const isCorrectOpt = isPinyin
+        ? (opt) => opt.pinyin === c.pinyin
+        : (opt) => opt.hanzi  === c.hanzi;
+
       document.getElementById('main').innerHTML = `
-    <div style="max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:1.1rem">
-      <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap"><div class="level-pills">${levelPills()}</div></div>
+    <div style="max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:1.1rem">
+      <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
+        <div class="level-pills">${levelPills()}</div>
+        <div style="display:flex;gap:0.35rem;margin-left:auto">
+          <button id="mode-hanzi" class="btn btn-sm ${!isPinyin ? 'btn-accent' : ''}" style="font-size:0.6rem">汉字 Modu</button>
+          <button id="mode-pinyin" class="btn btn-sm ${isPinyin ? 'btn-accent' : ''}" style="font-size:0.6rem">Pīnyīn Modu</button>
+        </div>
+      </div>
       <div class="score-bar">${S.quizScore.slice(-12).map(h => `<div class="score-dot ${h ? 'hit' : 'miss'}"></div>`).join('')}${S.quizScore.length ? `<span class="muted" style="margin-left:0.38rem">${S.quizScore.filter(Boolean).length}/${S.quizScore.length}</span>` : ''}</div>
       <div class="card" style="text-align:center">
-        <div class="muted" style="font-size:0.58rem;letter-spacing:3px;margin-bottom:0.85rem">HANGİ KARAKTER?</div>
+        <div class="muted" style="font-size:0.58rem;letter-spacing:3px;margin-bottom:0.85rem">${isPinyin ? 'HANZİ NEDİR?' : 'HANZİ OKUNUŞU?'}</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:0.85rem;margin-bottom:0.85rem">
-          <div style="font-size:1.6rem;color:var(--accent);font-family:'Space Mono',monospace">${c.pinyin}</div>
+          ${questionHtml}
           <button class="vol-btn" id="qv">🔊</button>
         </div>
-        <div style="color:var(--text2);font-size:0.8rem;margin-bottom:1.2rem">${c.tr || c.en}</div>
-        <div class="qz-grid">${S.quizOptions.map((opt, i) => { let cls = ''; if (S.quizAnswered) cls = opt.hanzi === c.hanzi ? 'correct' : opt.hanzi === S.quizSelected?.hanzi ? 'wrong' : ''; return `<button class="qz-opt ${cls}" data-qi="${i}" ${S.quizAnswered ? 'disabled' : ''}>${opt.hanzi}</button>`; }).join('')}</div>
-        ${S.quizAnswered ? `<div style="margin-top:1rem"><div style="color:${S.quizSelected?.hanzi === c.hanzi ? 'var(--green)' : 'var(--red)'};margin-bottom:0.6rem;font-size:0.82rem">${S.quizSelected?.hanzi === c.hanzi ? '✓ Doğru!' : '✗ Yanlış — Doğrusu: ' + c.hanzi}</div><button class="btn btn-accent" id="qn">Sonraki →</button></div>` : ''}
+        <div style="margin-bottom:1.2rem;min-height:1.4rem">
+          ${S.quizMeaningShown
+            ? `<div style="color:var(--text2);font-size:0.8rem">${c.tr || c.en}</div>`
+            : `<button id="show-meaning-btn" class="btn btn-sm" style="font-size:0.6rem;opacity:0.6">Anlamı Göster 👁</button>`
+          }
+        </div>
+        <div class="qz-grid">${S.quizOptions.map((opt, i) => {
+          let cls = '';
+          if (S.quizAnswered) cls = isCorrectOpt(opt) ? 'correct' : opt === S.quizSelected ? 'wrong' : '';
+          return `<button class="qz-opt ${cls}" data-qi="${i}" ${S.quizAnswered ? 'disabled' : ''}>${optLabel(opt)}</button>`;
+        }).join('')}</div>
+        ${S.quizAnswered ? `<div style="margin-top:1rem">
+          <div style="color:${isCorrectOpt(S.quizSelected) ? 'var(--green)' : 'var(--red)'};margin-bottom:0.6rem;font-size:0.82rem">
+            ${isCorrectOpt(S.quizSelected) ? '✓ Doğru!' : '✗ Yanlış — Doğrusu: ' + (isPinyin ? c.pinyin : c.hanzi) + ' · ' + c.tr}
+          </div>
+          <button class="btn btn-accent" id="qn">Sonraki →</button>
+        </div>` : ''}
       </div>
     </div>`;
-      document.getElementById('qv')?.addEventListener('click', () => { const b = document.getElementById('qv'); speak(c.hanzi, b); });
-      document.querySelectorAll('.qz-opt').forEach(b => b.addEventListener('click', () => { if (S.quizAnswered) return; S.quizSelected = S.quizOptions[+b.dataset.qi]; S.quizAnswered = true; const hit = S.quizSelected.hanzi === c.hanzi; S.quizScore.push(hit); if (hit) speak(c.hanzi, b); renderQuiz(); }));
-      document.getElementById('qn')?.addEventListener('click', () => { S.quizIdx++; S.quizOptions = []; initQuiz(); renderQuiz(); });
 
+      document.getElementById('qv')?.addEventListener('click', () => speak(c.hanzi, document.getElementById('qv')));
+      document.getElementById('show-meaning-btn')?.addEventListener('click', () => { S.quizMeaningShown = true; renderQuiz(); });
+      document.getElementById('mode-hanzi')?.addEventListener('click', () => { S.quizMode = 'hanzi'; S.quizOptions = []; initQuiz(); renderQuiz(); });
+      document.getElementById('mode-pinyin')?.addEventListener('click', () => { S.quizMode = 'pinyin'; S.quizOptions = []; initQuiz(); renderQuiz(); });
+      document.querySelectorAll('.qz-opt').forEach(b => b.addEventListener('click', () => {
+        if (S.quizAnswered) return;
+        S.quizSelected = S.quizOptions[+b.dataset.qi];
+        S.quizAnswered = true;
+        const hit = isCorrectOpt(S.quizSelected);
+        S.quizScore.push(hit);
+        if (hit) speak(c.hanzi, b);
+        renderQuiz();
+      }));
+      document.getElementById('qn')?.addEventListener('click', () => { S.quizIdx++; S.quizOptions = []; initQuiz(); renderQuiz(); });
     }
 
     // ══════════════════════════════════════════════════════════════
