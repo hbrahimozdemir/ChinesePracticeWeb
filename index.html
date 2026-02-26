@@ -4247,10 +4247,15 @@ const SENTENCES = [
         ${exs.length ? `<div style="font-size:0.7rem; margin-top:0.4rem; color:var(--text2); border-top:1px solid var(--border); padding-top:0.4rem"><div>${exs[0].cn}</div><div>${exs[0].tr}</div><button class="vol-btn" style="width:22px;height:22px;font-size:0.6rem;margin-top:2px" id="fv_ex">🔊</button></div>` : ''}
         ${vidHtml}
         ${c.hsk ? `<div class="tag" style="margin-top:0.3rem">HSK ${c.hsk}</div>` : ''}
-        ${c.hanzi.length === 1 ? `<div id="stroke-seq-container" style="margin-top:1rem; padding-top:0.8rem; border-top:1px solid var(--border); width:100%; text-align:center;">
+        <div id="stroke-seq-container" style="margin-top:1rem; padding-top:0.8rem; border-top:1px solid var(--border); width:100%; text-align:center;">
           <div class="muted" style="font-size:0.55rem;letter-spacing:2px;margin-bottom:0.5rem">ADIM ADIM ÇİZİM</div>
-          <div id="stroke-seq" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>
-        </div>` : ''}
+          ${[...c.hanzi].map((ch, ci) => `
+            <div style="display:inline-block;margin:0 6px;vertical-align:top;">
+              <button class="char-audio-btn" data-ch="${ch}" style="background:none;border:none;cursor:pointer;color:var(--accent);font-family:'Noto Serif SC',serif;font-size:1rem;display:block;width:100%;margin-bottom:4px;">🔊 ${ch}</button>
+              <div id="stroke-seq-${ci}" style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;"></div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     </div></div>
     <div style="display:flex;gap:0.6rem"><button class="btn" id="fprev">← Önceki</button><button class="btn btn-accent" id="fnext">Sonraki →</button></div>
@@ -4259,27 +4264,23 @@ const SENTENCES = [
         renderStroke('flash-stroke', c.hanzi); 
       }
       
-      if (c.hanzi.length === 1 && document.getElementById('stroke-seq')) {
-        HanziWriter.loadCharacterData(c.hanzi).then(function(charData) {
-          const target = document.getElementById('stroke-seq');
-          if (!target || S.words[S.flashOrder[S.flashIdx]].hanzi !== c.hanzi) return;
+      // Render stroke sequence for each character
+      const renderCharStrokes = (ch, targetId) => {
+        HanziWriter.loadCharacterData(ch).then(function(charData) {
+          const target = document.getElementById(targetId);
+          if (!target) return;
           target.innerHTML = '';
           const W = 38, H = 38, P = 3;
           for (let i = 0; i < charData.strokes.length; i++) {
             const strokesPortion = charData.strokes.slice(0, i + 1);
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.style.width = W + 'px';
-            svg.style.height = H + 'px';
+            svg.style.width = W + 'px'; svg.style.height = H + 'px';
             svg.style.border = '1px solid var(--border)';
-            svg.style.borderRadius = '4px';
-            svg.style.background = 'var(--surface)';
-            
+            svg.style.borderRadius = '4px'; svg.style.background = 'var(--surface)';
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            const transformData = HanziWriter.getScalingTransform(W, H, P);
-            group.setAttribute('transform', transformData.transform);
+            const td = HanziWriter.getScalingTransform(W, H, P);
+            group.setAttribute('transform', td.transform);
             svg.appendChild(group);
-
-            // Çizilen strokları ekle
             strokesPortion.forEach(function(strokePath, index) {
               const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
               path.setAttribute('d', strokePath);
@@ -4288,8 +4289,14 @@ const SENTENCES = [
             });
             target.appendChild(svg);
           }
-        }).catch(err => console.log('HanziWriter char chart error:', err));
-      }
+        }).catch(err => console.log('HanziWriter chart err:', err));
+      };
+      [...c.hanzi].forEach((ch, ci) => {
+        renderCharStrokes(ch, 'stroke-seq-' + ci);
+      });
+      document.querySelectorAll('.char-audio-btn').forEach(btn => {
+        btn.addEventListener('click', e => { e.stopPropagation(); speak(btn.dataset.ch, btn); });
+      });
       document.getElementById('fc').addEventListener('click', () => { S.flashFlipped = !S.flashFlipped; renderFlash(); });
       document.getElementById('fprev').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx - 1 + pool.length) % pool.length; S.flashFlipped = false; renderFlash(); });
       document.getElementById('fnext').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx + 1) % pool.length; S.flashFlipped = false; renderFlash(); });
@@ -4462,13 +4469,20 @@ const SENTENCES = [
     // ══════════════════════════════════════════════════════════════
     document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => { S.tab = b.dataset.tab; render(); }));
     
+    
+    document.getElementById('login-pass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('login-btn').click();
+    });
+    document.getElementById('login-user').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('login-pass').focus();
+    });
     document.getElementById('login-btn').addEventListener('click', () => {
       const u = document.getElementById('login-user').value.trim();
       const p = document.getElementById('login-pass').value.trim();
       if (u === 'admin' && p === 'admin1718') {
         sessionStorage.setItem('ch_auth', '1');
         document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('app-content').style.display = 'flex';
+        document.getElementById('app-content').style.cssText = 'display:flex;flex-direction:column;min-height:100vh';
       } else {
         document.getElementById('login-error').textContent = 'Hatalı kullanıcı adı veya şifre!';
       }
@@ -4477,7 +4491,7 @@ const SENTENCES = [
     window.addEventListener('load', async () => {
       if (sessionStorage.getItem('ch_auth') === '1') {
         document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('app-content').style.display = 'flex';
+        document.getElementById('app-content').style.cssText = 'display:flex;flex-direction:column;min-height:100vh';
       } else {
         document.getElementById('app-content').style.display = 'none';
       }
