@@ -215,6 +215,10 @@
       padding: 1.2rem;
     }
     #flashcard-view .card { max-width: 600px; width: 100%; }
+    #det { overflow: hidden; min-width: 0; }
+    .pinyin-big { word-break: break-all; overflow-wrap: break-word; max-width: 100%; }
+    .char-box { width: auto; min-width: 120px; max-width: 100%; height: auto; min-height: 120px; padding: 1rem; }
+    .hanzi-xl { font-size: 5rem; word-break: break-all; max-width: 100%; text-align: center; }
 
     .btn {
       padding: 0.42rem 1rem;
@@ -651,7 +655,7 @@
 
     .grid-3 {
       display: grid;
-      grid-template-columns: 290px 1fr 285px;
+      grid-template-columns: 250px 1fr 380px;
       gap: 1.2rem;
     }
 
@@ -3646,36 +3650,105 @@
     function buildGraph(center) {
       if (!center) return null;
       const nodes = [], links = [], seen = new Set();
-      const add = (w, iC = false) => { if (seen.has(w.hanzi)) return; seen.add(w.hanzi); nodes.push({ id: w.hanzi, pinyin: w.pinyin, meaning: w.tr || w.en, hsk: w.hsk, isCenter: iC }); };
-      add(center, true);
+      // add(word, isCenter, type) - type: 'center'|'compound'|'char'|'unit'|'mdbg'
+      const add = (w, iC = false, type = 'local') => {
+        if (seen.has(w.hanzi)) return;
+        seen.add(w.hanzi);
+        nodes.push({ id: w.hanzi, pinyin: w.pinyin, meaning: w.tr || w.en, hsk: w.hsk, isCenter: iC, nodeType: type });
+      };
+      add(center, true, 'center');
 
-      // Bileşikleri: karakter bazlı node'lara ayır
+      // 1️⃣ Compound connections (legacy)
       (center.compounds || []).forEach(c => {
         const chars = compoundChars(c);
         if (chars.length >= 2) {
-          // Her karakteri ayrı node olarak ekle, aralarında zincir bağlantı kur
           chars.forEach((ch, i) => {
             const w = WORDS.find(x => x.hanzi === ch) || { hanzi: ch, pinyin: '', tr: '', en: '', hsk: center.hsk, compounds: [] };
-            add(w);
-            if (i > 0) links.push({ source: chars[i - 1], target: ch, compound: c });
-            // Merkezi karakterle bağlantı sadece merkez kendisindeyse
-            if (ch !== center.hanzi && i === 0) links.push({ source: center.hanzi, target: ch, compound: c });
+            add(w, false, 'compound');
+            if (i > 0) links.push({ source: chars[i - 1], target: ch, ltype: 'compound' });
+            if (ch !== center.hanzi && i === 0) links.push({ source: center.hanzi, target: ch, ltype: 'compound' });
           });
         } else {
-          // Tek karakter compound ya da WORDS'te yoksa eski davranış
           const w = WORDS.find(x => x.hanzi === c) || { hanzi: c, pinyin: '', tr: '', en: '', hsk: center.hsk, compounds: [] };
-          add(w);
-          links.push({ source: center.hanzi, target: c });
+          add(w, false, 'compound');
+          links.push({ source: center.hanzi, target: c, ltype: 'compound' });
         }
       });
 
-      // Merkez karakteri içeren diğer kelimeler (tek karakter ise)
+      // 2️⃣ Shared character connections - words that share characters with center
+      const centerChars = [...new Set([...center.hanzi])];
+      centerChars.forEach(ch => {
+        WORDS.forEach(w => {
+          if (w.hanzi === center.hanzi || seen.has(w.hanzi)) return;
+          if (w.hanzi.includes(ch)) {
+            add(w, false, 'char');
+            links.push({ source: center.hanzi, target: w.hanzi, ltype: 'char', shared: ch });
+          }
+        });
+      });
+
+      // 3️⃣ Reverse: words whose compounds include center
       WORDS.forEach(w => {
         if (w.hanzi === center.hanzi) return;
-        if ((w.compounds || []).includes(center.hanzi)) { add(w); links.push({ source: w.hanzi, target: center.hanzi }); }
-        else if (center.hanzi.length === 1 && w.hanzi.includes(center.hanzi) && !seen.has(w.hanzi)) { add(w); links.push({ source: center.hanzi, target: w.hanzi }); }
+        if ((w.compounds || []).includes(center.hanzi) && !seen.has(w.hanzi)) {
+          add(w, false, 'compound');
+          links.push({ source: w.hanzi, target: center.hanzi, ltype: 'compound' });
+        }
       });
+
+      // 4️⃣ Same-unit context connections (same lesson = likely related semantically)
+      // Limit to 5 to avoid cluttering, pick alphabetically closest
+      const unitNeighbors = WORDS
+        .filter(w => w.unit === center.unit && w.hanzi !== center.hanzi && !seen.has(w.hanzi))
+        .slice(0, 5);
+      unitNeighbors.forEach(w => {
+        add(w, false, 'unit');
+        links.push({ source: center.hanzi, target: w.hanzi, ltype: 'unit' });
+      });
+
       return { nodes, links };
+    }
+
+    // ── mdbg.net async enrichment ─────────────────────────────────────────────
+    async function fetchMDBGWords(hanzi) {
+      const proxy = 'https://corsproxy.io/?' + encodeURIComponent('https://www.mdbg.net/chinese/dictionary?search=' + encodeURIComponent(hanzi) + '&searchp=simplified&page=1&pagesize=10');
+      const resp = await fetch(proxy, { signal: AbortSignal.timeout(7000) });
+      if (!resp.ok) throw new Error('MDBG fetch failed');
+      const html = await resp.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const results = [];
+      // mdbg.net uses <div class="entry_jap"> or table.ce with tr.row
+      doc.querySelectorAll('table.ce tr.row').forEach(row => {
+        const hz  = row.querySelector('.simplified, .head')?.textContent?.trim()?.split(' ')[0];
+        const py  = row.querySelector('.pinyin')?.textContent?.trim();
+        const def = row.querySelector('.explanation')?.textContent?.trim()?.split('/')[0]?.trim();
+        if (hz && hz !== hanzi && /^[一-鿿]+$/.test(hz)) results.push({ hanzi: hz, pinyin: py || '', meaning: def || '' });
+      });
+      return results.slice(0, 8);
+    }
+
+    async function enrichGraphFromMDBG(center) {
+      const el = document.getElementById('graph-container');
+      const btn = document.getElementById('mdbg-enrich-btn');
+      if (btn) { btn.textContent = '⏳ Yükleniyor...'; btn.disabled = true; }
+      try {
+        const extraWords = await fetchMDBGWords(center.hanzi);
+        if (!extraWords.length) { if (btn) btn.textContent = '✗ Bulunamadı'; return; }
+        // Add MDBG words to graph as ghost nodes
+        const existing = el?.__graphData;
+        if (!existing) return;
+        extraWords.forEach(w => {
+          if (!existing.nodes.find(n => n.id === w.hanzi)) {
+            existing.nodes.push({ id: w.hanzi, pinyin: w.pinyin, meaning: w.meaning, hsk: 0, isCenter: false, nodeType: 'mdbg' });
+            existing.links.push({ source: center.hanzi, target: w.hanzi, ltype: 'mdbg' });
+          }
+        });
+        renderGraphFromData(center, existing);
+        if (btn) { btn.textContent = '✓ mdbg yüklendi'; }
+      } catch(e) {
+        console.warn('MDBG enrich failed:', e);
+        if (btn) { btn.textContent = '✗ Bağlanamadı'; btn.disabled = false; }
+      }
     }
 
     function renderGraph(center) {
@@ -3691,9 +3764,16 @@
       svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform)));
       if (sim) sim.stop();
       sim = d3.forceSimulation(data.nodes).force('link', d3.forceLink(data.links).id(d => d.id).distance(105)).force('charge', d3.forceManyBody().strength(-260)).force('center', d3.forceCenter(W / 2, H / 2)).force('collision', d3.forceCollide(44));
-      const link = g.append('g').selectAll('line').data(data.links).enter().append('line').attr('stroke', 'rgba(232,184,75,0.28)').attr('stroke-width', 1.5).attr('marker-end', 'url(#arr)');
+      el.__graphData = data; // save for MDBG enrichment
+      const linkColor = d => d.ltype === 'unit' ? 'rgba(59,130,246,0.35)' : d.ltype === 'char' ? 'rgba(16,185,129,0.35)' : d.ltype === 'mdbg' ? 'rgba(239,68,68,0.35)' : 'rgba(232,184,75,0.28)';
+      const link = g.append('g').selectAll('line').data(data.links).enter().append('line').attr('stroke', linkColor).attr('stroke-width', 1.5).attr('marker-end', 'url(#arr)');
       const nd = g.append('g').selectAll('g').data(data.nodes).enter().append('g').style('cursor', 'pointer').call(d3.drag().on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }).on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; }).on('end', (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
-      nd.append('circle').attr('r', d => d.isCenter ? 35 : 25).attr('fill', d => d.isCenter ? 'rgba(232,184,75,0.14)' : 'rgba(34,34,40,0.96)').attr('stroke', d => d.isCenter ? '#e8b84b' : '#3e3e48').attr('stroke-width', d => d.isCenter ? 2 : 1);
+      nd.append('circle')
+        .attr('r', d => d.isCenter ? 35 : (d.nodeType === 'mdbg' ? 20 : 25))
+        .attr('fill', d => d.isCenter ? 'rgba(232,184,75,0.14)' : d.nodeType === 'mdbg' ? 'rgba(239,68,68,0.07)' : d.nodeType === 'unit' ? 'rgba(59,130,246,0.07)' : d.nodeType === 'char' ? 'rgba(16,185,129,0.07)' : 'rgba(34,34,40,0.96)')
+        .attr('stroke', d => d.isCenter ? '#e8b84b' : d.nodeType === 'mdbg' ? '#ef4444' : d.nodeType === 'unit' ? '#3b82f6' : d.nodeType === 'char' ? '#10b981' : '#3e3e48')
+        .attr('stroke-width', d => d.isCenter ? 2 : 1)
+        .attr('stroke-dasharray', d => d.nodeType === 'mdbg' ? '3,2' : 'none');
       nd.append('text').attr('text-anchor', 'middle').attr('dominant-baseline', 'central').attr('font-family', 'Noto Serif SC,serif').attr('font-size', d => d.isCenter ? '1.3rem' : '0.95rem').attr('fill', d => d.isCenter ? '#e8b84b' : '#f0ede6').text(d => d.id);
       nd.append('text').attr('text-anchor', 'middle').attr('y', d => d.isCenter ? 48 : 35).attr('font-family', 'Space Mono,monospace').attr('font-size', '0.5rem').attr('fill', '#9a9890').text(d => d.pinyin);
       nd.on('click', (e, d) => { const w = WORDS.find(x => x.hanzi === d.id); if (w) { S.selected = w; renderGraph(w); renderDetail(); updWL(); } });
@@ -3778,14 +3858,22 @@
           ${S.selected ? `<span class="tag tag-accent">${S.selected.hanzi} · ${S.selected.pinyin}</span>` : ''}
         </div>
         <div id="graph-container"></div>
-        <p class="muted" style="margin-top:0.35rem;font-size:0.58rem">Sürükle · Scroll=zoom · Node'a tıkla=gez</p>
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.35rem;flex-wrap:wrap">
+          <p class="muted" style="font-size:0.58rem">Sürükle · Scroll=zoom · Node'a tıkla=gez</p>
+          <span class="muted" style="font-size:0.55rem">│ <span style="color:rgba(16,185,129,0.8)">●</span> ortak karakter · <span style="color:rgba(59,130,246,0.8)">●</span> aynı ders</span>
+          ${S.selected ? `<button id="mdbg-enrich-btn" class="btn btn-sm" style="font-size:0.55rem;padding:0.18rem 0.5rem" onclick="enrichGraphFromMDBG(S.selected)">🌐 mdbg.net bağlantıları</button>` : ''}
+        </div>
       </div>
       <div class="card" id="det">${detHTML()}</div>
     </div>`;
       document.getElementById('dsearch').addEventListener('input', e => {
-        S.graphSearch = e.target.value; const q = e.target.value.trim();
+        const curVal = e.target.value, curPos = e.target.selectionStart;
+        S.graphSearch = curVal; const q = curVal.trim();
         if (q) { const w = S.words.find(x => x.hanzi === q) || S.words.find(x => x.hanzi.includes(q) || x.pinyin.toLowerCase().includes(q)); if (w) S.selected = w; }
         renderDict(); renderGraph(S.selected);
+        // RE-FOCUS after DOM rebuild so user can keep typing
+        const inp = document.getElementById('dsearch');
+        if (inp) { inp.focus(); try { inp.setSelectionRange(curPos, curPos); } catch(e){} }
       });
 
       document.querySelectorAll('.word-row').forEach(r => r.addEventListener('click', () => { S.selected = WORDS.find(x => x.hanzi === r.dataset.h); renderDict(); renderGraph(S.selected); }));
