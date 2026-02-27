@@ -262,13 +262,22 @@ function renderStroke(boxId, hanzi) {
 }
 function renderDict() {
   const f = S.words.filter(w => { const q = S.graphSearch.toLowerCase().trim(); return !q || w.hanzi.includes(q) || w.pinyin.toLowerCase().includes(q) || (w.tr || '').toLowerCase().includes(q) || (w.en || '').toLowerCase().includes(q); });
+
+  if (document.getElementById('dsearch') && document.querySelector('.word-list')) {
+    document.querySelector('.word-list').innerHTML = f.map(w => `<div class="word-row ${S.selected?.hanzi === w.hanzi ? 'selected' : ''}" data-h="${w.hanzi}"><span class="hw">${w.hanzi}</span><div style="flex:1;min-width:0"><div class="py">${w.pinyin}</div><div class="mn">${(w.tr || w.en || '').split(' / ')[0]}</div></div>${w.hsk ? `<span class="lv-badge">H${w.hsk}</span>` : ''}</div>`).join('') + (!f.length ? `<div class="muted" style="text-align:center;padding:2rem">Sonuç yok</div>` : '');
+    const mc = document.getElementById('dict-count'); if (mc) mc.textContent = `${f.length} kelime`;
+    document.querySelectorAll('.word-list .word-row').forEach(r => r.addEventListener('click', () => { S.selected = WORDS.find(x => x.hanzi === r.dataset.h); renderDict(); renderGraph(S.selected); renderDetail(); updWL(); }));
+    updWL();
+    return;
+  }
+
   document.getElementById('main').innerHTML = `
     <div class="grid-3" style="align-items:start">
       <div class="card" style="padding:1rem">
         <div style="margin-bottom:0.85rem">
           <div class="search-wrap" style="margin-bottom:0.6rem"><span class="icon">🔍</span><input id="dsearch" type="text" placeholder="Hanzi, pinyin, anlam..." value="${S.graphSearch}"/></div>
           <div class="level-pills">${levelPills()}</div>
-          <div class="muted" style="margin-top:0.4rem">${f.length} kelime</div>
+          <div class="muted" style="margin-top:0.4rem" id="dict-count">${f.length} kelime</div>
         </div>
         <div class="word-list">
           ${f.map(w => `<div class="word-row ${S.selected?.hanzi === w.hanzi ? 'selected' : ''}" data-h="${w.hanzi}"><span class="hw">${w.hanzi}</span><div style="flex:1;min-width:0"><div class="py">${w.pinyin}</div><div class="mn">${(w.tr || w.en || '').split(' / ')[0]}</div></div>${w.hsk ? `<span class="lv-badge">H${w.hsk}</span>` : ''}</div>`).join('')}
@@ -292,16 +301,13 @@ function renderDict() {
       <div class="card" id="det">${detHTML()}</div>
     </div>`;
   document.getElementById('dsearch').addEventListener('input', e => {
-    const curVal = e.target.value, curPos = e.target.selectionStart;
+    const curVal = e.target.value;
     S.graphSearch = curVal; const q = curVal.trim();
     if (q) { const w = S.words.find(x => x.hanzi === q) || S.words.find(x => x.hanzi.includes(q) || x.pinyin.toLowerCase().includes(q)); if (w) S.selected = w; }
-    renderDict(); renderGraph(S.selected);
-    // RE-FOCUS after DOM rebuild so user can keep typing
-    const inp = document.getElementById('dsearch');
-    if (inp) { inp.focus(); try { inp.setSelectionRange(curPos, curPos); } catch (e) { } }
+    renderDict(); renderGraph(S.selected); renderDetail(); updWL();
   });
 
-  document.querySelectorAll('.word-row').forEach(r => r.addEventListener('click', () => { S.selected = WORDS.find(x => x.hanzi === r.dataset.h); renderDict(); renderGraph(S.selected); }));
+  document.querySelectorAll('.word-row').forEach(r => r.addEventListener('click', () => { S.selected = WORDS.find(x => x.hanzi === r.dataset.h); renderDict(); renderGraph(S.selected); renderDetail(); updWL(); }));
   bindDet(); setTimeout(() => renderGraph(S.selected), 40);
 }
 
@@ -319,7 +325,7 @@ function detHTML() {
           </a>
         </div>`;
   return `<div style="display:flex;flex-direction:column;align-items:center;gap:1rem" class="fade-in">
-    ${w.hanzi.length === 1 ? `<div class="stroke-box" id="dict-stroke" title="Tekrar oynat / Quiz için tıkla"></div>` : `<div class="char-box"><div class="hanzi-xl">${w.hanzi}</div></div>`}
+    ${w.hanzi.length === 1 ? `<div class="stroke-box" id="dict-stroke" title="Tekrar oynat / Quiz için tıkla"></div>` : `<div class="char-box"><div class="hanzi-xl" style="display:flex;flex-wrap:wrap;justify-content:center;">${[...w.hanzi].map(ch => `<span class="hoverable-char" data-ch="${ch}" style="cursor:help;transition:color 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color=''">` + ch + `</span>`).join('')}</div></div>`}
     <button class="vol-btn" id="vmain">🔊</button>
     <div style="text-align:center">
       <div class="pinyin-big">${w.pinyin}</div>
@@ -344,6 +350,7 @@ function bindDet() {
   const vm = document.getElementById('vmain'); if (vm) vm.addEventListener('click', () => speak(S.selected?.hanzi, vm));
   document.querySelectorAll('[data-speak]').forEach(b => b.addEventListener('click', () => speak(b.dataset.speak, b)));
   document.querySelectorAll('.compound-btn').forEach(b => b.addEventListener('click', () => { const w = WORDS.find(x => x.hanzi === b.dataset.h); if (w) { S.selected = w; renderGraph(w); document.getElementById('det').innerHTML = detHTML(); bindDet(); updWL(); } }));
+  bindHoverableChars();
 }
 function renderDetail() { const p = document.getElementById('det'); if (p) { p.innerHTML = detHTML(); bindDet(); } }
 function updWL() { document.querySelectorAll('.word-row').forEach(r => r.classList.toggle('selected', r.dataset.h === S.selected?.hanzi)); }
@@ -431,35 +438,7 @@ function renderFlash() {
     btn.addEventListener('click', e => { e.stopPropagation(); speak(btn.dataset.ch, btn); });
   });
 
-  document.querySelectorAll('.hoverable-char').forEach(el => {
-    el.addEventListener('mouseenter', e => {
-      const popup = document.getElementById('char-hover-popup');
-      if (!popup) return;
-      popup.style.display = 'block';
-      const rect = el.getBoundingClientRect();
-      popup.style.left = (rect.left + rect.width / 2 - 60) + 'px';
-      popup.style.top = (rect.top - 130) + 'px';
-
-      document.getElementById('char-hover-stroke').innerHTML = '';
-      try {
-        window._hoverWriter = HanziWriter.create('char-hover-stroke', el.dataset.ch, {
-          width: 108, height: 108, padding: 5, strokeAnimationSpeed: 1.5,
-          delayBetweenStrokes: 200, strokeColor: '#e8b84b', radicalColor: '#4caf7d',
-          outlineColor: '#2e2e38'
-        });
-        window._hoverWriter.loopCharacterAnimation();
-      } catch (err) { }
-    });
-    el.addEventListener('mouseleave', () => {
-      const popup = document.getElementById('char-hover-popup');
-      if (popup) popup.style.display = 'none';
-      if (window._hoverWriter) {
-        // we don't need to explicitly cancel, but we could empty the container
-        document.getElementById('char-hover-stroke').innerHTML = '';
-        window._hoverWriter = null;
-      }
-    });
-  });
+  bindHoverableChars();
   document.getElementById('fc').addEventListener('click', () => { S.flashFlipped = !S.flashFlipped; renderFlash(); });
   document.getElementById('fprev').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx - 1 + pool.length) % pool.length; S.flashFlipped = false; renderFlash(); });
   document.getElementById('fnext').addEventListener('click', e => { e.stopPropagation(); S.flashIdx = (S.flashIdx + 1) % pool.length; S.flashFlipped = false; renderFlash(); });
@@ -679,6 +658,57 @@ function renderQuiz() {
   }));
   document.getElementById('qn')?.addEventListener('click', () => { S.quizIdx++; S.quizOptions = []; initQuiz(); renderQuiz(); });
 }
+
+// ══════════════════════════════════════════════════════════════
+//  HOVERABLE CHARS & POPUP
+// ══════════════════════════════════════════════════════════════
+function bindHoverableChars() {
+  document.querySelectorAll('.hoverable-char').forEach(el => {
+    if (el.dataset.hoverBound) return;
+    el.dataset.hoverBound = "1";
+    el.addEventListener('mouseenter', e => {
+      const popup = document.getElementById('char-hover-popup');
+      if (!popup) return;
+      popup.style.display = 'block';
+      const rect = el.getBoundingClientRect();
+      let left = rect.left + rect.width / 2 - 60;
+      let top = rect.top - 130;
+      if (top < 0) top = rect.bottom + 10;
+      if (left < 0) left = 10;
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+
+      document.getElementById('char-hover-stroke').innerHTML = '';
+      try {
+        window._hoverWriter = HanziWriter.create('char-hover-stroke', el.dataset.ch, {
+          width: 108, height: 108, padding: 5, strokeAnimationSpeed: 1.5,
+          delayBetweenStrokes: 200, strokeColor: '#e8b84b', radicalColor: '#4caf7d',
+          outlineColor: '#2e2e38'
+        });
+        window._hoverWriter.loopCharacterAnimation();
+      } catch (err) { }
+    });
+    el.addEventListener('mouseleave', () => {
+      const popup = document.getElementById('char-hover-popup');
+      if (popup) popup.style.display = 'none';
+      if (window._hoverWriter) {
+        document.getElementById('char-hover-stroke').innerHTML = '';
+        window._hoverWriter = null;
+      }
+    });
+  });
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.hoverable-char')) {
+    const popup = document.getElementById('char-hover-popup');
+    if (popup) popup.style.display = 'none';
+    if (window._hoverWriter) {
+      document.getElementById('char-hover-stroke').innerHTML = '';
+      window._hoverWriter = null;
+    }
+  }
+});
 
 // ══════════════════════════════════════════════════════════════
 //  BOOT
