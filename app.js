@@ -580,9 +580,11 @@ function initQuiz() {
   const c = pool[S.quizOrder[S.quizIdx % pool.length]];
   S.quizCorrect = c; // store correct answer in state – used by renderQuiz
   // 3 wrong options different from correct on the active field
-  const filterFn = S.quizMode === 'pinyin'
-    ? x => x.pinyin !== c.pinyin
-    : x => x.hanzi !== c.hanzi;
+  let filterFn;
+  if (S.quizMode === 'pinyin') filterFn = x => x.pinyin !== c.pinyin;
+  else if (S.quizMode === 'meaning') filterFn = x => x.hanzi !== c.hanzi;
+  else filterFn = x => x.hanzi !== c.hanzi;
+
   const wrongs = pool.filter(filterFn).sort(() => 0.5 - Math.random()).slice(0, 3);
   S.quizOptions = [c, ...wrongs].sort(() => 0.5 - Math.random());
   S.quizAnswered = false; S.quizSelected = null; S.quizMeaningShown = false;
@@ -590,43 +592,52 @@ function initQuiz() {
 function renderQuiz() {
   if (!S.quizOptions.length || !S.quizCorrect) initQuiz();
   const c = S.quizCorrect; // always use the stored correct answer
-  const isPinyin = S.quizMode === 'pinyin';
+  const mode = S.quizMode || 'hanzi';
 
-  // Question shows: hanzi mode → show pinyin; pinyin mode → show hanzi
-  const questionHtml = isPinyin
-    ? `<div style="font-family:'Noto Serif SC',serif;font-size:3rem;letter-spacing:4px;color:var(--text)">${c.hanzi}</div>`
-    : `<div style="font-size:1.6rem;color:var(--accent);font-family:'Space Mono',monospace;letter-spacing:2px">${c.pinyin}</div>`;
+  let questionHtml, optLabel, isCorrectOpt, questionTitle;
 
-  // Options show the OTHER field
-  const optLabel = isPinyin
-    ? (opt) => `<span style="font-size:0.85rem;letter-spacing:1px">${opt.pinyin}</span>`
-    : (opt) => `<span style="font-family:'Noto Serif SC',serif;font-size:1.5rem">${opt.hanzi}</span>`;
-
-  // Correct check
-  const isCorrectOpt = isPinyin
-    ? (opt) => opt.pinyin === c.pinyin
-    : (opt) => opt.hanzi === c.hanzi;
+  if (mode === 'pinyin') {
+    questionTitle = 'HANZİ NEDİR?';
+    questionHtml = `<div style="font-family:'Noto Serif SC',serif;font-size:3rem;letter-spacing:4px;color:var(--text)">${c.hanzi}</div>`;
+    optLabel = opt => `<span style="font-size:0.85rem;letter-spacing:1px">${opt.pinyin}</span>`;
+    isCorrectOpt = opt => opt.pinyin === c.pinyin;
+  } else if (mode === 'meaning') {
+    questionTitle = 'ÇİNCE KARŞILIĞI NEDİR?';
+    questionHtml = `<div class="qz-meaning-prompt" style="font-size:1.4rem;color:var(--text);letter-spacing:1px;line-height:1.4">${c.tr || c.en || '?'}</div>`;
+    optLabel = opt => `<span style="font-family:'Noto Serif SC',serif;font-size:1.5rem">${opt.hanzi}</span>`;
+    isCorrectOpt = opt => opt.hanzi === c.hanzi;
+  } else {
+    // hanzi mode
+    questionTitle = 'HANZİ OKUNUŞU?';
+    questionHtml = `<div style="font-size:1.6rem;color:var(--accent);font-family:'Space Mono',monospace;letter-spacing:2px">${c.pinyin}</div>`;
+    optLabel = opt => `<span style="font-family:'Noto Serif SC',serif;font-size:1.5rem">${opt.hanzi}</span>`;
+    isCorrectOpt = opt => opt.hanzi === c.hanzi;
+  }
 
   document.getElementById('main').innerHTML = `
     <div style="max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:1.1rem">
       <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
         <div class="level-pills">${levelPills()}</div>
         <div style="display:flex;gap:0.35rem;margin-left:auto">
-          <button id="mode-hanzi" class="btn btn-sm ${!isPinyin ? 'btn-accent' : ''}" style="font-size:0.6rem">汉字 Modu</button>
-          <button id="mode-pinyin" class="btn btn-sm ${isPinyin ? 'btn-accent' : ''}" style="font-size:0.6rem">Pīnyīn Modu</button>
+          <button id="mode-hanzi" class="btn btn-sm ${mode === 'hanzi' ? 'btn-accent' : ''}" style="font-size:0.6rem">汉字</button>
+          <button id="mode-pinyin" class="btn btn-sm ${mode === 'pinyin' ? 'btn-accent' : ''}" style="font-size:0.6rem">Pīnyīn</button>
+          <button id="mode-meaning" class="btn btn-sm ${mode === 'meaning' ? 'btn-accent' : ''}" style="font-size:0.6rem">Anlam</button>
         </div>
       </div>
       <div class="score-bar">${S.quizScore.slice(-12).map(h => `<div class="score-dot ${h ? 'hit' : 'miss'}"></div>`).join('')}${S.quizScore.length ? `<span class="muted" style="margin-left:0.38rem">${S.quizScore.filter(Boolean).length}/${S.quizScore.length}</span>` : ''}</div>
       <div class="card" style="text-align:center">
-        <div class="muted" style="font-size:0.58rem;letter-spacing:3px;margin-bottom:0.85rem">${isPinyin ? 'HANZİ NEDİR?' : 'HANZİ OKUNUŞU?'}</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:0.85rem;margin-bottom:0.85rem">
-          ${questionHtml}
-          <button class="vol-btn" id="qv">🔊</button>
+        <div class="muted" style="font-size:0.58rem;letter-spacing:3px;margin-bottom:0.85rem">${questionTitle}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:0.85rem;margin-bottom:0.85rem;flex-direction:column;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.85rem;">
+            ${mode === 'meaning' ? '' : questionHtml}
+            ${mode === 'meaning' ? '' : `<button class="vol-btn" id="qv">🔊</button>`}
+          </div>
+          ${mode === 'meaning' ? questionHtml : ''}
         </div>
         <div style="margin-bottom:1.2rem;min-height:1.4rem">
           ${S.quizMeaningShown
-      ? `<div style="color:var(--text2);font-size:0.8rem">${c.tr || c.en}</div>`
-      : `<button id="show-meaning-btn" class="btn btn-sm" style="font-size:0.6rem;opacity:0.6">Anlamı Göster 👁</button>`
+      ? (mode === 'meaning' ? `<div style="color:var(--text2);font-size:0.85rem;font-family:'Space Mono',monospace"><span class="muted">İpucu:</span> ${c.pinyin}</div>` : `<div style="color:var(--text2);font-size:0.8rem">${c.tr || c.en}</div>`)
+      : `<button id="show-meaning-btn" class="btn btn-sm" style="font-size:0.6rem;opacity:0.6">${mode === 'meaning' ? 'İpucu Göster 👁' : 'Anlamı Göster 👁'}</button>`
     }
         </div>
         <div class="qz-grid">${S.quizOptions.map((opt, i) => {
@@ -636,7 +647,7 @@ function renderQuiz() {
     }).join('')}</div>
         ${S.quizAnswered ? `<div style="margin-top:1rem">
           <div style="color:${isCorrectOpt(S.quizSelected) ? 'var(--green)' : 'var(--red)'};margin-bottom:0.6rem;font-size:0.82rem">
-            ${isCorrectOpt(S.quizSelected) ? '✓ Doğru!' : '✗ Yanlış — Doğrusu: ' + (isPinyin ? c.pinyin : c.hanzi) + ' · ' + c.tr}
+            ${isCorrectOpt(S.quizSelected) ? '✓ Doğru!' : '✗ Yanlış — Doğrusu: ' + (mode === 'pinyin' ? c.pinyin : c.hanzi) + ' · ' + c.tr}
           </div>
           <button class="btn btn-accent" id="qn">Sonraki →</button>
         </div>` : ''}
@@ -647,6 +658,7 @@ function renderQuiz() {
   document.getElementById('show-meaning-btn')?.addEventListener('click', () => { S.quizMeaningShown = true; renderQuiz(); });
   document.getElementById('mode-hanzi')?.addEventListener('click', () => { S.quizMode = 'hanzi'; S.quizOptions = []; initQuiz(); renderQuiz(); });
   document.getElementById('mode-pinyin')?.addEventListener('click', () => { S.quizMode = 'pinyin'; S.quizOptions = []; initQuiz(); renderQuiz(); });
+  document.getElementById('mode-meaning')?.addEventListener('click', () => { S.quizMode = 'meaning'; S.quizOptions = []; initQuiz(); renderQuiz(); });
   document.querySelectorAll('.qz-opt').forEach(b => b.addEventListener('click', () => {
     if (S.quizAnswered) return;
     S.quizSelected = S.quizOptions[+b.dataset.qi];
