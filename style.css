@@ -488,9 +488,9 @@
 
     .fc-scene {
       perspective: 1000px;
-      width: 360px;
-      max-width: 90vw;
-      height: 460px;
+      width: 440px;
+      max-width: 94vw;
+      height: 640px;
       cursor: pointer;
     }
 
