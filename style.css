@@ -114,20 +114,6 @@ body::after {
 
 #tts-bar { display: none !important; }
 
-/* ════════════════════════════════════════════════════════
-   STAR FIELD
-════════════════════════════════════════════════════════ */
-#star-field {
-  position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
-}
-[data-theme="light"] #star-field { display: none; }
-.star {
-  position: absolute; border-radius: 50%;
-  background: rgba(255,248,220, var(--op, 0.8));
-  animation: twinkle var(--dur, 4s) ease-in-out infinite alternate;
-  animation-delay: var(--dly, 0s);
-}
-@keyframes twinkle { 0%{opacity:.2;transform:scale(.8)} 100%{opacity:1;transform:scale(1.2)} }
 
 /* ════════════════════════════════════════════════════════
    CELESTIAL ORB (moon/sun)
@@ -169,26 +155,7 @@ body::after {
 @media (max-width: 768px) { #mountain-bg { display: none; } }
 [data-theme="light"] #mountain-bg { opacity: 0.18; filter: invert(1) sepia(0.3); }
 
-/* ════════════════════════════════════════════════════════
-   MIST
-════════════════════════════════════════════════════════ */
-@media (max-width: 768px) { .mist { display: none; } }
-@keyframes mistMove { 0%{transform:translateX(-12%)scaleX(1)} 50%{transform:translateX(12%)scaleX(1.12)} 100%{transform:translateX(-12%)scaleX(1)} }
 
-/* ════════════════════════════════════════════════════════
-   LANTERNS
-════════════════════════════════════════════════════════ */
-@media (max-width: 1024px) { .lantern { display: none; } }
-
-/* ════════════════════════════════════════════════════════
-   SIDE COLUMNS
-════════════════════════════════════════════════════════ */
-@media (max-width: 1200px) { .side-col { display: none; } }
-
-/* ════════════════════════════════════════════════════════
-   SEAL STAMPS
-════════════════════════════════════════════════════════ */
-@media (max-width: 768px) { .seal { display: none; } }
 
 /* ════════════════════════════════════════════════════════
    HEADER

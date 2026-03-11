@@ -16,7 +16,6 @@
   </style>
 </head>
 <body>
-  <div id="star-field"></div>
   <div id="mountain-bg">
     <svg viewBox="0 0 1200 400" preserveAspectRatio="none">
       <path d="M0,400 L0,280 Q150,220 300,300 T600,240 T900,320 T1200,200 L1200,400 Z" fill="#0c1428" opacity="0.6"/>
@@ -86,18 +85,6 @@
     }
     setTheme(localStorage.getItem('hz-theme') || 'dark');
     tb.addEventListener('click', () => setTheme(he.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
-
-    // Star field generation (copy-pasted logic for consistency)
-    const sf = document.getElementById('star-field');
-    for(let i=0; i<150; i++) {
-      const s = document.createElement('div');
-      s.className = 'star';
-      s.style.left = Math.random()*100+'%';
-      s.style.top = Math.random()*100+'%';
-      s.style.width = s.style.height = (Math.random()*2+1)+'px';
-      s.style.setProperty('--d', Math.random()*5+2+'s');
-      sf.appendChild(s);
-    }
   </script>
 </body>
 </html>

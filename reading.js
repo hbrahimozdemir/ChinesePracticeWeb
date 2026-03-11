@@ -12,6 +12,8 @@ let R_STATE = {
   tokens: []
 };
 
+let ttsKeepAlive = null;
+
 function initReading() {
   renderReadingHeader();
   loadStory(0);
@@ -191,6 +193,7 @@ function speakStory() {
   const story = READING_STORIES[R_STATE.activeStoryIdx];
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
+  if (ttsKeepAlive) clearInterval(ttsKeepAlive);
   
   const u = new SpeechSynthesisUtterance(story.text);
   u.lang = 'zh-CN';
@@ -203,14 +206,24 @@ function speakStory() {
   const btn = document.getElementById('speak-btn');
   if (btn) btn.classList.add('playing');
   
+  u.onstart = () => {
+    // Workaround for Chromium 15s TTS bug
+    ttsKeepAlive = setInterval(() => {
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    }, 12000); // 12 seconds
+  };
+
   u.onend = u.onerror = () => {
     if (btn) btn.classList.remove('playing');
+    if (ttsKeepAlive) clearInterval(ttsKeepAlive);
   };
   
   window.speechSynthesis.speak(u);
 }
 
 function stopStory() {
+  if (ttsKeepAlive) clearInterval(ttsKeepAlive);
   window.speechSynthesis.cancel();
   const btn = document.getElementById('speak-btn');
   if (btn) btn.classList.remove('playing');
