@@ -780,51 +780,16 @@
     setTheme(localStorage.getItem(TK) || 'dark');
     tb.addEventListener('click', function () { setTheme(he.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); });
 
-    /* ════ MOBİL SES FİX ════ */
-    var _au = false;
-    function unlockAudio() {
-      if (_au) return;
-      try {
-        var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-        var ctx = new AC(), buf = ctx.createBuffer(1, 1, 22050), src = ctx.createBufferSource();
-        src.buffer = buf; src.connect(ctx.destination); src.start(0);
-        setTimeout(function () { ctx.close && ctx.close(); }, 500); _au = true;
-      } catch (e) { }
+  /* ════ INITIALIZATION ════ */
+  window.addEventListener('load', () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      }
     }
-    ['touchstart', 'touchend', 'click', 'keydown'].forEach(function (ev) {
-      document.addEventListener(ev, unlockAudio, { once: true, passive: true });
-    });
-    if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = function () { window.speechSynthesis.getVoices(); };
-
-    window.speakChinese = function (txt) {
-      if (!txt || !window.speechSynthesis) return;
-      unlockAudio();
-      window.speechSynthesis.cancel();
-      setTimeout(function () {
-        var u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'zh-CN'; u.rate = 0.85; u.pitch = 1; u.volume = 1;
-        var v = window.speechSynthesis.getVoices().find(function (x) { return x.lang === 'zh-CN' || x.lang.startsWith('zh'); });
-        if (v) u.voice = v;
-        var ka;
-        u.onstart = function () { ka = setInterval(function () { if (!window.speechSynthesis.speaking) { clearInterval(ka); return; } window.speechSynthesis.pause(); window.speechSynthesis.resume(); }, 9000); };
-        u.onend = u.onerror = function () { clearInterval(ka); };
-        window.speechSynthesis.speak(u);
-      }, 60);
-    };
-
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      document.addEventListener('click', function (e) {
-        var b = e.target.closest('.vol-btn'); if (!b) return;
-        var w = b.dataset.word || b.dataset.text || b.dataset.hz || (b.closest('[data-word]') && b.closest('[data-word]').dataset.word) || '';
-        if (!w) {
-          var r = b.closest('.word-row'), d = document.getElementById('det');
-          if (r) { var h = r.querySelector('.hw'); if (h) w = h.textContent.trim(); }
-          else if (d) { var g = d.querySelector('.hanzi-xl'); if (g) w = g.textContent.trim(); }
-        }
-        if (w) { e.stopImmediatePropagation(); e.preventDefault(); window.speakChinese(w); }
-      }, true);
-    }
-  </script>
+  });
+</script>
 
   <div id="char-hover-popup"
     style="display:none;position:fixed;background:rgba(7,13,31,.92);backdrop-filter:blur(16px);border:1px solid rgba(240,200,74,.2);border-radius:2px;padding:6px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:9999;pointer-events:none;width:120px;height:120px;">

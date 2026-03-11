@@ -36,17 +36,22 @@ const TTS = (() => {
 
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-CN';
-    u.rate = isRepeat ? 0.5 : 0.85;
+    u.rate = isRepeat ? 0.55 : 0.85;
+    u.pitch = 1.0;
 
     const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) {
-      const v = voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh'));
-      if (v) u.voice = v;
+      // Prioritize Google voices or specific high-quality ones often found on mobile/desktop
+      const preferred = voices.find(v => v.lang.includes('zh') && (v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Xiaoxiao')));
+      const fallback = voices.find(v => v.lang.startsWith('zh'));
+      if (preferred) u.voice = preferred;
+      else if (fallback) u.voice = fallback;
     }
 
     if (btn) btn.classList.add('playing');
-    u.onend = u.onerror = (e) => {
-      if (e && e.type === 'error') console.warn('TTS Error', e);
+    u.onend = () => { if (btn) btn.classList.remove('playing'); };
+    u.onerror = (e) => {
+      console.warn('TTS Error', e);
       if (btn) btn.classList.remove('playing');
     };
     window.speechSynthesis.speak(u);
@@ -97,7 +102,12 @@ function filterWords() {
   let filtered = l === 'all' ? WORDS : l === '1-2' ? WORDS.filter(w => w.hsk <= 2) : l === '3-4' ? WORDS.filter(w => w.hsk >= 3 && w.hsk <= 4) : WORDS.filter(w => w.hsk >= 5);
 
   if (u !== 'all') {
-    filtered = filtered.filter(w => w.unit == u || (u == 7 && w.unit == 8)); // 7 & 8 are combined usually
+    // If unit 7 or 8 is selected, show both (as they are combined in the curriculum)
+    if (u == 7 || u == 8) {
+      filtered = filtered.filter(w => w.unit == 7 || w.unit == 8);
+    } else {
+      filtered = filtered.filter(w => w.unit == u);
+    }
   }
   S.words = filtered;
 }
@@ -247,9 +257,11 @@ function renderStroke(boxId, hanzi) {
   const box = document.getElementById(boxId);
   if (!box || !hanzi) return;
   box.innerHTML = '';
+  const isMobile = window.innerWidth <= 768;
+  const size = isMobile ? 100 : 140;
   try {
     hwWriter = HanziWriter.create(boxId, hanzi[0], {
-      width: 140, height: 140,
+      width: size, height: size,
       padding: 5,
       strokeAnimationSpeed: 1.5,
       delayBetweenStrokes: 200,
@@ -410,7 +422,8 @@ function renderFlash() {
       const target = document.getElementById(targetId);
       if (!target) return;
       target.innerHTML = '';
-      const W = 38, H = 38, P = 3;
+      const isMobile = window.innerWidth <= 768;
+      const W = isMobile ? 32 : 38, H = isMobile ? 32 : 38, P = 2;
       for (let i = 0; i < charData.strokes.length; i++) {
         const strokesPortion = charData.strokes.slice(0, i + 1);
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
